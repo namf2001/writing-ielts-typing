@@ -252,10 +252,17 @@ export function TypingPractice() {
         body: JSON.stringify({ topic: topic || null, taskType, bandTarget }),
       })
       const data = await res.json()
+      
+      if (!res.ok || data.error) {
+        alert(data.error || "Không thể tạo đề bài. Vui lòng thử lại sau.")
+        return
+      }
+      
       setPrompt(data.prompt)
       setSampleEssay(null)
     } catch (error) {
       console.error("Failed to generate prompt:", error)
+      alert("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.")
     } finally {
       setIsGeneratingPrompt(false)
     }
@@ -270,9 +277,16 @@ export function TypingPractice() {
         body: JSON.stringify({ prompt, taskType, bandTarget }),
       })
       const data = await res.json()
+      
+      if (!res.ok || data.error) {
+        alert(data.error || "Không thể tạo bài mẫu. Vui lòng thử lại sau.")
+        return
+      }
+      
       setSampleEssay(data.essay)
     } catch (error) {
       console.error("Failed to generate essay:", error)
+      alert("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.")
     } finally {
       setIsGeneratingEssay(false)
     }
@@ -300,6 +314,12 @@ export function TypingPractice() {
         body: JSON.stringify({ prompt, essay: typedText, taskType }),
       })
       const data = await res.json()
+      
+      if (!res.ok || data.error) {
+        alert(data.error || "Không thể chấm điểm. Vui lòng thử lại sau.")
+        return
+      }
+      
       setScoreResult(data)
       setShowScore(true)
 
@@ -320,6 +340,7 @@ export function TypingPractice() {
       setSubmissions((prev) => [newSubmission, ...prev])
     } catch (error) {
       console.error("Failed to score essay:", error)
+      alert("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.")
     } finally {
       setIsScoring(false)
     }

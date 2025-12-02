@@ -2,19 +2,20 @@ import { generateText } from "ai"
 import { google } from "@ai-sdk/google"
 
 export async function POST(req: Request) {
-  const { topic, taskType, bandTarget } = await req.json()
+  try {
+    const { topic, taskType, bandTarget } = await req.json()
 
-  const topicInstruction =
-    topic && topic !== "random"
-      ? `about the topic: ${topic}`
-      : "on a random common IELTS topic (education, technology, environment, health, society, work, culture)"
+    const topicInstruction =
+      topic && topic !== "random"
+        ? `about the topic: ${topic}`
+        : "on a random common IELTS topic (education, technology, environment, health, society, work, culture)"
 
-  const taskInstruction =
-    taskType === "task1"
-      ? "Write an IELTS Academic Writing Task 1 prompt. The prompt should describe a chart, graph, table, or diagram that candidates need to analyze and summarize in at least 150 words."
-      : "Write an IELTS Academic Writing Task 2 prompt. The prompt should present an opinion, problem, or discussion topic that candidates need to write an essay about in at least 250 words."
+    const taskInstruction =
+      taskType === "task1"
+        ? "Write an IELTS Academic Writing Task 1 prompt. The prompt should describe a chart, graph, table, or diagram that candidates need to analyze and summarize in at least 150 words."
+        : "Write an IELTS Academic Writing Task 2 prompt. The prompt should present an opinion, problem, or discussion topic that candidates need to write an essay about in at least 250 words."
 
-  const prompt = `${taskInstruction}
+    const prompt = `${taskInstruction}
 
 Topic: ${topicInstruction}
 
@@ -26,15 +27,32 @@ Requirements:
 
 Generate the prompt now:`
 
-  const { text } = await generateText({
-    model: google("gemini-2.0-flash"),
-    prompt,
-    maxOutputTokens: 500,
-    temperature: 0.8,
-  })
+    const { text } = await generateText({
+      model: google("gemini-2.0-flash"),
+      prompt,
+      maxOutputTokens: 500,
+      temperature: 0.8,
+    })
 
-  return Response.json({
-    prompt: text.trim(),
-    topic: topic || "random",
-  })
+    return Response.json({
+      prompt: text.trim(),
+      topic: topic || "random",
+    })
+  } catch (error: unknown) {
+    console.error("Generate prompt error:", error)
+    
+    // Kiểm tra lỗi rate limit
+    const errorObj = error as { lastError?: { statusCode?: number } }
+    if (errorObj?.lastError?.statusCode === 429) {
+      return Response.json(
+        { error: "Đã vượt quá giới hạn API. Vui lòng đợi 1-2 phút rồi thử lại." },
+        { status: 429 }
+      )
+    }
+    
+    return Response.json(
+      { error: "Không thể tạo đề bài. Vui lòng thử lại sau." },
+      { status: 500 }
+    )
+  }
 }

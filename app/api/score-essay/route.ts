@@ -27,12 +27,13 @@ const feedbackSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const { prompt, essay, taskType } = await req.json()
+  try {
+    const { prompt, essay, taskType } = await req.json()
 
-  const wordCount = essay.split(/\s+/).filter(Boolean).length
-  const minWords = taskType === "task1" ? 150 : 250
+    const wordCount = essay.split(/\s+/).filter(Boolean).length
+    const minWords = taskType === "task1" ? 150 : 250
 
-  const scoringPrompt = `You are an experienced IELTS examiner. Score the following essay according to official IELTS band descriptors.
+    const scoringPrompt = `You are an experienced IELTS examiner. Score the following essay according to official IELTS band descriptors.
 
 Writing Prompt: ${prompt}
 
@@ -56,12 +57,27 @@ Also provide:
 
 Be fair but constructive. Consider word count penalties if under minimum.`
 
-  const { object } = await generateObject({
-    model: google("gemini-2.0-flash"),
-    schema: feedbackSchema,
-    prompt: scoringPrompt,
-    maxOutputTokens: 2000,
-  })
+    const { object } = await generateObject({
+      model: google("gemini-2.0-flash"),
+      schema: feedbackSchema,
+      prompt: scoringPrompt,
+    })
 
-  return Response.json(object)
+    return Response.json(object)
+  } catch (error: unknown) {
+    console.error("Score essay error:", error)
+    
+    const errorObj = error as { lastError?: { statusCode?: number } }
+    if (errorObj?.lastError?.statusCode === 429) {
+      return Response.json(
+        { error: "Đã vượt quá giới hạn API. Vui lòng đợi 1-2 phút rồi thử lại." },
+        { status: 429 }
+      )
+    }
+    
+    return Response.json(
+      { error: "Không thể chấm điểm bài viết. Vui lòng thử lại sau." },
+      { status: 500 }
+    )
+  }
 }
