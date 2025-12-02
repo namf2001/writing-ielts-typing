@@ -383,6 +383,9 @@ export function TypingPractice() {
                 hasKeyboard={showKeyboard}
                 prompt={prompt}
                 writingMode={writingMode}
+                isCompleted={isCompleted}
+                wpm={wpm}
+                accuracy={accuracy}
               />
             </main>
           </div>
