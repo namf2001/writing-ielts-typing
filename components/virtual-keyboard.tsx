@@ -92,7 +92,7 @@ export function VirtualKeyboard({ activeKey, nextKey }: VirtualKeyboardProps) {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--keyboard-bg)]/95 backdrop-blur-md border-t border-border shadow-2xl"
+      className="shrink-0 bg-[var(--keyboard-bg)]/95 backdrop-blur-md border-t border-border shadow-2xl"
       role="region"
       aria-label="Virtual keyboard"
     >

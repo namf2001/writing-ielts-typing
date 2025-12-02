@@ -32,7 +32,6 @@ export function Sidebar({ showKeyboard, onToggleKeyboard, onReset, soundEnabled,
     <TooltipProvider>
       <aside
         className="w-14 md:w-16 border-r border-border flex flex-col items-center py-4 md:py-8 gap-4 md:gap-6"
-        style={{ paddingBottom: showKeyboard ? "180px" : undefined }}
         role="navigation"
         aria-label="Sidebar controls"
       >
@@ -48,7 +47,6 @@ export function Sidebar({ showKeyboard, onToggleKeyboard, onReset, soundEnabled,
 
         <div className="flex-1" />
 
-        <div className="flex flex-col gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -81,7 +79,6 @@ export function Sidebar({ showKeyboard, onToggleKeyboard, onReset, soundEnabled,
               <TooltipContent side="right">{isDark ? "Chế độ sáng" : "Chế độ tối"}</TooltipContent>
             </Tooltip>
           )}
-        </div>
 
         <Tooltip>
           <TooltipTrigger asChild>

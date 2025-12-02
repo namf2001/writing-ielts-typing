@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect } from "react"
 
 interface TypingAreaProps {
   text: string
@@ -13,25 +13,6 @@ interface TypingAreaProps {
 export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt }: TypingAreaProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentCharRef = useRef<HTMLSpanElement>(null)
-  const [keyboardHeight, setKeyboardHeight] = useState(0)
-
-  useEffect(() => {
-    const updateKeyboardHeight = () => {
-      if (hasKeyboard) {
-        const width = window.innerWidth
-        if (width < 640) setKeyboardHeight(160)
-        else if (width < 768) setKeyboardHeight(180)
-        else if (width < 1024) setKeyboardHeight(200)
-        else setKeyboardHeight(220)
-      } else {
-        setKeyboardHeight(0)
-      }
-    }
-
-    updateKeyboardHeight()
-    window.addEventListener("resize", updateKeyboardHeight)
-    return () => window.removeEventListener("resize", updateKeyboardHeight)
-  }, [hasKeyboard])
 
   useEffect(() => {
     currentCharRef.current?.scrollIntoView({
@@ -82,7 +63,7 @@ export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt 
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 relative" style={{ paddingBottom: keyboardHeight }}>
+    <div className="flex flex-col flex-1 min-h-0 relative">
       {prompt && prompt !== text && (
         <div className="px-4 sm:px-6 md:px-8 lg:px-16 py-3 md:py-4 border-b border-border/50 bg-secondary/30">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Đề bài:</p>
@@ -103,10 +84,7 @@ export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt 
         </div>
       </div>
 
-      <div
-        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-6 md:pt-8 pb-3 md:pb-4"
-        style={{ bottom: keyboardHeight }}
-      >
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-6 md:pt-8 pb-3 md:pb-4">
         <p className="text-center text-muted-foreground text-[10px] sm:text-xs md:text-sm">
           Nhấn phím bất kỳ để bắt đầu. Nhấn{" "}
           <kbd className="px-1 sm:px-1.5 md:px-2 py-0.5 md:py-1 bg-secondary rounded text-[8px] sm:text-[10px] md:text-xs font-mono border border-border">

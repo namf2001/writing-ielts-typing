@@ -4,8 +4,9 @@ import { useState } from "react"
 import { AppNavbar } from "./app-navbar"
 import { ExerciseSelector } from "./exercise-selector"
 import { WritingEditor } from "./writing-editor"
-import { SubmissionHistory } from "./submission-history"
+import { SubmissionHistory, type Submission } from "./submission-history"
 import { ScoreResult } from "./score-result"
+import type { ScoreData } from "./typing-practice"
 
 export type WritingMode = "self-write" | "ai-assisted"
 export type AppView = "exercise" | "history"
@@ -16,24 +17,6 @@ export interface WritingPrompt {
   type: "task1" | "task2"
   prompt: string
   bandTarget?: number
-}
-
-export interface Submission {
-  id: string
-  prompt: WritingPrompt
-  essay: string
-  mode: WritingMode
-  score: number
-  feedback: {
-    taskResponse: { score: number; feedback: string }
-    coherenceCohesion: { score: number; feedback: string }
-    lexicalResource: { score: number; feedback: string }
-    grammaticalRange: { score: number; feedback: string }
-    overall: string
-    improvements: string[]
-  } | null
-  wordCount: number
-  submittedAt: Date
 }
 
 export function WritingPractice() {
@@ -66,17 +49,21 @@ export function WritingPractice() {
         }),
       })
 
-      const result = await response.json()
+      const result: ScoreData = await response.json()
 
       const newSubmission: Submission = {
         id: crypto.randomUUID(),
-        prompt: currentPrompt,
+        date: new Date().toISOString(),
+        prompt: currentPrompt.prompt,
         essay,
-        mode: writingMode,
-        score: result.overallScore,
-        feedback: result.feedback,
+        taskType: currentPrompt.type,
+        topic: currentPrompt.topic,
+        writingMode: writingMode === "self-write" ? "self" : "ai-assisted",
+        bandTarget,
+        score: result,
+        wpm: 0,
+        accuracy: 100,
         wordCount: essay.split(/\s+/).filter(Boolean).length,
-        submittedAt: new Date(),
       }
 
       setSubmissions((prev) => [newSubmission, ...prev])
@@ -89,9 +76,12 @@ export function WritingPractice() {
   }
 
   const handleViewSubmission = (submission: Submission) => {
-    setCurrentPrompt(submission.prompt)
     setCurrentSubmission(submission)
     setCurrentView("exercise")
+  }
+
+  const handleDeleteSubmission = (id: string) => {
+    setSubmissions((prev) => prev.filter((s) => s.id !== id))
   }
 
   return (
@@ -114,7 +104,11 @@ export function WritingPractice() {
 
             <div className="space-y-6">
               {currentSubmission ? (
-                <ScoreResult submission={currentSubmission} onWriteAgain={() => setCurrentSubmission(null)} />
+                <ScoreResult 
+                  result={currentSubmission.score} 
+                  onClose={() => setCurrentSubmission(null)} 
+                  onRetry={() => setCurrentSubmission(null)} 
+                />
               ) : (
                 <WritingEditor
                   prompt={currentPrompt}
@@ -127,7 +121,12 @@ export function WritingPractice() {
             </div>
           </div>
         ) : (
-          <SubmissionHistory submissions={submissions} onViewSubmission={handleViewSubmission} />
+          <SubmissionHistory 
+            submissions={submissions} 
+            onViewSubmission={handleViewSubmission} 
+            onDeleteSubmission={handleDeleteSubmission}
+            onNewPractice={() => setCurrentView("exercise")}
+          />
         )}
       </main>
     </div>

@@ -314,7 +314,7 @@ export function TypingPractice() {
       />
 
       {viewMode === "practice" ? (
-        <>
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex flex-1 min-h-0">
             <Sidebar
               showKeyboard={showKeyboard}
@@ -346,7 +346,7 @@ export function TypingPractice() {
           </div>
 
           {showKeyboard && <VirtualKeyboard activeKey={activeKey} nextKey={text[currentIndex] || ""} />}
-        </>
+        </div>
       ) : (
         <SubmissionHistory
           submissions={submissions}
