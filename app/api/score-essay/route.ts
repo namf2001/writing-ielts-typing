@@ -1,4 +1,5 @@
 import { generateObject } from "ai"
+import { google } from "@ai-sdk/google"
 import { z } from "zod"
 
 const feedbackSchema = z.object({
@@ -56,7 +57,7 @@ Also provide:
 Be fair but constructive. Consider word count penalties if under minimum.`
 
   const { object } = await generateObject({
-    model: "google/gemini-2.0-flash-001",
+    model: google("gemini-2.0-flash"),
     schema: feedbackSchema,
     prompt: scoringPrompt,
     maxOutputTokens: 2000,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect } from "react"
+import type { WritingMode } from "./typing-practice"
 
 interface TypingAreaProps {
   text: string
@@ -8,18 +9,27 @@ interface TypingAreaProps {
   currentIndex: number
   hasKeyboard: boolean
   prompt?: string
+  writingMode?: WritingMode
 }
 
-export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt }: TypingAreaProps) {
+export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt, writingMode = "ai-assisted" }: TypingAreaProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentCharRef = useRef<HTMLSpanElement>(null)
+  const textareaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    currentCharRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    })
-  }, [currentIndex])
+    if (writingMode === "ai-assisted") {
+      currentCharRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
+    } else {
+      // Chế độ tự viết: scroll xuống cuối
+      if (textareaRef.current) {
+        textareaRef.current.scrollTop = textareaRef.current.scrollHeight
+      }
+    }
+  }, [currentIndex, writingMode])
 
   const renderChar = (char: string, index: number) => {
     const isTyped = index < currentIndex
@@ -62,6 +72,58 @@ export function TypingArea({ text, typedText, currentIndex, hasKeyboard, prompt 
     )
   }
 
+  // Chế độ tự viết: hiển thị textarea ảo
+  if (writingMode === "self") {
+    const wordCount = typedText.split(/\s+/).filter(Boolean).length
+
+    return (
+      <div className="flex flex-col flex-1 min-h-0 relative">
+        {/* Đề bài */}
+        {prompt && (
+          <div className="px-4 sm:px-6 md:px-8 lg:px-16 py-3 md:py-4 border-b border-border/50 bg-secondary/30">
+            <p className="text-xs md:text-sm text-muted-foreground mb-1">Đề bài:</p>
+            <p className="text-sm md:text-base text-foreground/80 italic">{prompt}</p>
+          </div>
+        )}
+
+        {/* Vùng gõ tự do */}
+        <div
+          ref={textareaRef}
+          className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 lg:px-16 py-4 md:py-6 scrollbar-thin"
+          role="region"
+          aria-label="Free typing area"
+        >
+          <div className="max-w-4xl mx-auto">
+            <div className="leading-loose tracking-wide min-h-[200px]">
+              <span className="font-mono text-base sm:text-lg md:text-xl lg:text-2xl text-foreground whitespace-pre-wrap">
+                {typedText}
+              </span>
+              <span className="font-mono text-base sm:text-lg md:text-xl lg:text-2xl bg-primary/40 rounded animate-pulse">
+                &nbsp;
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer với word count */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-6 md:pt-8 pb-3 md:pb-4">
+          <div className="flex items-center justify-center gap-4 text-muted-foreground text-[10px] sm:text-xs md:text-sm">
+            <span className="font-medium">{wordCount} từ</span>
+            <span>•</span>
+            <span>
+              Nhấn{" "}
+              <kbd className="px-1 sm:px-1.5 md:px-2 py-0.5 md:py-1 bg-secondary rounded text-[8px] sm:text-[10px] md:text-xs font-mono border border-border">
+                Esc
+              </kbd>{" "}
+              để tạm dừng
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Chế độ gõ theo mẫu: hiển thị text để gõ theo
   return (
     <div className="flex flex-col flex-1 min-h-0 relative">
       {prompt && prompt !== text && (

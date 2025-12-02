@@ -122,6 +122,39 @@ export function TypingPractice() {
       setActiveKey(e.key)
       setTimeout(() => setActiveKey(""), 100)
 
+      // Chế độ tự viết: cho phép gõ tự do
+      if (writingMode === "self") {
+        if (e.key === "Backspace") {
+          if (typedText.length > 0) {
+            setTypedText((prev) => prev.slice(0, -1))
+            setCurrentIndex((prev) => Math.max(0, prev - 1))
+            if (soundEnabled) playKeySound()
+          }
+          return
+        }
+
+        if (e.key === "Enter") {
+          setTypedText((prev) => prev + "\n")
+          setCurrentIndex((prev) => prev + 1)
+          if (soundEnabled) playKeySound()
+          return
+        }
+
+        if (e.key.length === 1) {
+          setTypedText((prev) => prev + e.key)
+          setCurrentIndex((prev) => prev + 1)
+          if (soundEnabled) {
+            if (e.key === " ") {
+              playSpaceSound()
+            } else {
+              playKeySound()
+            }
+          }
+        }
+        return
+      }
+
+      // Chế độ gõ theo mẫu: so sánh với text
       if (e.key === "Backspace") {
         if (currentIndex > 0) {
           setCurrentIndex((prev) => prev - 1)
@@ -175,10 +208,12 @@ export function TypingPractice() {
       isPaused,
       currentIndex,
       text,
+      typedText,
       startTime,
       showExercisePanel,
       showScore,
       viewMode,
+      writingMode,
       soundEnabled,
       playKeySound,
       playErrorSound,
@@ -244,8 +279,13 @@ export function TypingPractice() {
   }
 
   const startPractice = () => {
-    const practiceText = writingMode === "ai-assisted" && sampleEssay ? sampleEssay : prompt
-    setText(practiceText)
+    if (writingMode === "ai-assisted" && sampleEssay) {
+      // Chế độ gõ theo mẫu: gõ theo bài mẫu AI
+      setText(sampleEssay)
+    } else {
+      // Chế độ tự viết: không có text mẫu, người dùng tự gõ
+      setText("")
+    }
     resetPractice()
     setShowExercisePanel(false)
   }
@@ -301,6 +341,7 @@ export function TypingPractice() {
     <div ref={containerRef} tabIndex={0} className="h-screen bg-background flex flex-col outline-none overflow-hidden">
       <Header
         viewMode={viewMode}
+        writingMode={writingMode}
         onChangeViewMode={setViewMode}
         onOpenExercise={() => {
           setViewMode("practice")
@@ -341,6 +382,7 @@ export function TypingPractice() {
                 currentIndex={currentIndex}
                 hasKeyboard={showKeyboard}
                 prompt={prompt}
+                writingMode={writingMode}
               />
             </main>
           </div>

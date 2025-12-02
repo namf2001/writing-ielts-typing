@@ -2,10 +2,12 @@
 
 import { BookOpen, BarChart3, PenTool, RotateCcw, Loader2, History, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { ViewMode } from "./typing-practice"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import type { ViewMode, WritingMode } from "./typing-practice"
 
 interface HeaderProps {
   viewMode: ViewMode
+  writingMode: WritingMode
   onChangeViewMode: (mode: ViewMode) => void
   onOpenExercise: () => void
   onReset: () => void
@@ -17,6 +19,7 @@ interface HeaderProps {
 
 export function Header({
   viewMode,
+  writingMode,
   onChangeViewMode,
   onOpenExercise,
   onReset,
@@ -25,6 +28,9 @@ export function Header({
   isScoring,
   submissionCount,
 }: HeaderProps) {
+  // Disable chấm điểm ở chế độ gõ theo mẫu (vì chỉ là copy bài mẫu)
+  const canScoreWithMode = canScore && writingMode === "self"
+
   return (
     <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card/50 backdrop-blur-sm">
       {/* Logo */}
@@ -115,16 +121,29 @@ export function Header({
               <span className="hidden md:inline">Reset</span>
             </Button>
 
-            <Button
-              variant="default"
-              size="sm"
-              className="gap-1.5 h-8 bg-primary hover:bg-primary/90"
-              onClick={onScore}
-              disabled={!canScore}
-            >
-              {isScoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart3 className="w-4 h-4" />}
-              <span className="hidden md:inline">{isScoring ? "Đang chấm..." : "Chấm điểm"}</span>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="gap-1.5 h-8 bg-primary hover:bg-primary/90"
+                      onClick={onScore}
+                      disabled={!canScoreWithMode}
+                    >
+                      {isScoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart3 className="w-4 h-4" />}
+                      <span className="hidden md:inline">{isScoring ? "Đang chấm..." : "Chấm điểm"}</span>
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {writingMode === "ai-assisted" && (
+                  <TooltipContent>
+                    <p>Chấm điểm chỉ khả dụng ở chế độ "Tự viết"</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </>
         )}
       </div>
