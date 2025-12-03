@@ -2,53 +2,206 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, Trash2, BookOpen, Volume2 } from "lucide-react"
+import { Search, Trash2, BookOpen, Volume2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import {
   getVocabularies,
   deleteVocabulary,
-  updateVocabulary,
   type Vocabulary,
 } from "@/lib/storage"
+
+// Dictionary types
+interface Phonetic {
+  text?: string
+  audio?: string
+}
+
+interface Definition {
+  definition: string
+  example?: string
+  synonyms?: string[]
+  antonyms?: string[]
+}
+
+interface Meaning {
+  partOfSpeech: string
+  definitions: Definition[]
+  synonyms?: string[]
+  antonyms?: string[]
+}
+
+interface DictionaryData {
+  word: string
+  phonetic?: string
+  phonetics: Phonetic[]
+  meanings: Meaning[]
+}
+
+// Component hiển thị thông tin từ điển
+function DictionaryInfo({ word }: { word: string }) {
+  const [data, setData] = useState<DictionaryData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDictionary = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(`/api/dictionary?word=${encodeURIComponent(word)}`)
+        const result = await response.json()
+
+        if (result.success && result.data) {
+          setData(result.data)
+        } else {
+          setError(result.error || "Không tìm thấy thông tin")
+        }
+      } catch (err) {
+        console.error("Dictionary fetch error:", err)
+        setError("Lỗi kết nối")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDictionary()
+  }, [word])
+
+  const playAudio = (audioUrl: string) => {
+    const audio = new Audio(audioUrl)
+    audio.play()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Đang tải thông tin từ điển...</span>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-sm text-muted-foreground py-2">
+        {error}
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  return (
+    <div className="pt-2">
+      {/* Phonetic */}
+      {(data.phonetic || data.phonetics.length > 0) && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {data.phonetic && (
+              <span className="text-sm text-muted-foreground">{data.phonetic}</span>
+            )}
+            {data.phonetics
+              .filter((p) => p.audio)
+              .slice(0, 2)
+              .map((phonetic, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => phonetic.audio && playAudio(phonetic.audio)}
+                  className="h-6 text-xs gap-1"
+                >
+                  <Volume2 className="h-3 w-3" />
+                  {phonetic.text || "Phát âm"}
+                </Button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Meanings */}
+      <div className="space-y-4">
+        {data.meanings.map((meaning, index) => (
+          <div key={index}>
+            <h4 className="font-medium capitalize text-primary text-sm mb-2">
+              {meaning.partOfSpeech}
+            </h4>
+            <div className="space-y-2 pl-2">
+              {meaning.definitions.slice(0, 4).map((def, defIndex) => (
+                <div key={defIndex} className="text-sm">
+                  <p className="text-foreground">
+                    <span className="text-muted-foreground mr-1 font-medium">{defIndex + 1}.</span>
+                    {def.definition}
+                  </p>
+                  {def.example && (
+                    <p className="text-xs text-muted-foreground italic mt-1 pl-4 border-l-2 border-primary/20">
+                      &ldquo;{def.example}&rdquo;
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              {/* Synonyms */}
+              {meaning.synonyms && meaning.synonyms.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-xs font-medium text-muted-foreground">Đồng nghĩa: </span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
+                    {meaning.synonyms.slice(0, 6).join(", ")}
+                  </span>
+                </div>
+              )}
+
+              {/* Antonyms */}
+              {meaning.antonyms && meaning.antonyms.length > 0 && (
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">Trái nghĩa: </span>
+                  <span className="text-xs text-orange-600 dark:text-orange-400">
+                    {meaning.antonyms.slice(0, 6).join(", ")}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function VocabularyPage() {
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   useEffect(() => {
     setVocabularies(getVocabularies())
   }, [])
 
-  const categories = Array.from(new Set(vocabularies.map((v) => v.category).filter(Boolean)))
-
   const filteredVocabularies = vocabularies.filter((v) => {
-    const matchSearch =
+    return (
       v.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.meaning.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchCategory = !selectedCategory || v.category === selectedCategory
-    return matchSearch && matchCategory
+    )
   })
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
     if (confirm("Bạn có chắc muốn xóa từ này?")) {
       deleteVocabulary(id)
       setVocabularies(getVocabularies())
     }
   }
 
-  const handleReview = (id: string) => {
-    updateVocabulary(id, {
-      reviewCount: (vocabularies.find((v) => v.id === id)?.reviewCount || 0) + 1,
-      lastReviewAt: new Date().toISOString(),
-    })
-    setVocabularies(getVocabularies())
-  }
-
-  const speakWord = (word: string) => {
+  const speakWord = (e: React.MouseEvent, word: string) => {
+    e.stopPropagation()
     const utterance = new SpeechSynthesisUtterance(word)
     utterance.lang = "en-US"
     speechSynthesis.speak(utterance)
@@ -57,36 +210,22 @@ export default function VocabularyPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        {/* Search & Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Tìm kiếm từ vựng..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={selectedCategory === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(null)}
-            >
-              Tất cả
-            </Button>
-            {categories.map((cat) => (
-              <Button
-                key={cat}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(cat || null)}
-              >
-                {cat}
-              </Button>
-            ))}
+      <main className="container mx-auto px-4 py-6 max-w-3xl">
+        {/* Search */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm kiếm từ vựng..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              <span className="font-medium text-foreground">{vocabularies.length}</span> từ đã lưu
+            </div>
           </div>
         </div>
 
@@ -103,57 +242,41 @@ export default function VocabularyPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Accordion type="single" collapsible className="w-full">
             {filteredVocabularies.map((vocab) => (
-              <Card key={vocab.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{vocab.word}</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => speakWord(vocab.word)}
-                        >
-                          <Volume2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <p className="text-muted-foreground">{vocab.meaning}</p>
-                      {vocab.example && (
-                        <p className="text-sm text-muted-foreground mt-2 italic">"{vocab.example}"</p>
-                      )}
+              <AccordionItem key={vocab.id} value={vocab.id} className="border-b">
+                <div className="flex items-center justify-between">
+                  <AccordionTrigger className="flex-1 py-4 hover:no-underline [&>svg]:hidden">
+                    <div className="flex items-center gap-3 text-left">
+                      <span className="font-medium text-base">{vocab.word}</span>
+                      <span className="text-sm text-muted-foreground">- {vocab.meaning}</span>
                     </div>
+                  </AccordionTrigger>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => speakWord(e, vocab.word)}
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(vocab.id)}
+                      onClick={(e) => handleDelete(e, vocab.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                    <div className="flex items-center gap-2">
-                      {vocab.category && (
-                        <Badge variant="secondary" className="text-xs">
-                          {vocab.category}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        Ôn tập: {vocab.reviewCount} lần
-                      </span>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => handleReview(vocab.id)}>
-                      Đã ôn
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <AccordionContent className="pb-4">
+                  <DictionaryInfo word={vocab.word} />
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         )}
       </main>
     </div>

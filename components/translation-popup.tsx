@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { X, ArrowRightLeft, Loader2, Copy, Check, Volume2 } from "lucide-react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { X, ArrowRightLeft, Loader2, Copy, Check, Volume2, BookmarkPlus, BookmarkCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { addVocabulary, getVocabularies } from "@/lib/storage"
 
 interface TranslationPopupProps {
   selectedText: string
@@ -16,6 +17,26 @@ export function TranslationPopup({ selectedText, position, onClose }: Translatio
   const [targetLang, setTargetLang] = useState<"vi" | "en">("vi")
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSaved, setIsSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Kiểm tra xem có phải từ đơn không (không có khoảng trắng)
+  const isSingleWord = useMemo(() => {
+    const trimmed = selectedText.trim()
+    // Từ đơn: không có khoảng trắng và có ít nhất 1 ký tự
+    return trimmed.length > 0 && !trimmed.includes(" ")
+  }, [selectedText])
+
+  // Kiểm tra từ đã được lưu chưa
+  useEffect(() => {
+    if (isSingleWord) {
+      const vocabularies = getVocabularies()
+      const exists = vocabularies.some(
+        (v) => v.word.toLowerCase() === selectedText.trim().toLowerCase()
+      )
+      setIsSaved(exists)
+    }
+  }, [selectedText, isSingleWord])
 
   const translate = useCallback(async () => {
     if (!selectedText.trim()) return
@@ -68,6 +89,26 @@ export function TranslationPopup({ selectedText, position, onClose }: Translatio
       window.speechSynthesis.speak(utterance)
     }
   }
+
+  // Lưu từ vựng
+  const saveToVocabulary = useCallback(() => {
+    if (!isSingleWord || !translated || isSaved) return
+
+    setIsSaving(true)
+    try {
+      addVocabulary(
+        selectedText.trim().toLowerCase(),
+        translated,
+        undefined, // example
+        undefined  // category
+      )
+      setIsSaved(true)
+    } catch (err) {
+      console.error("Save vocabulary error:", err)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [selectedText, translated, isSingleWord, isSaved])
 
   // Tính toán vị trí popup để không bị tràn ra ngoài màn hình
   const popupWidth = 320
@@ -178,7 +219,35 @@ export function TranslationPopup({ selectedText, position, onClose }: Translatio
 
       {/* Actions */}
       {translated && !isLoading && !error && (
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
+          {/* Nút lưu từ vựng - chỉ hiển thị khi là từ đơn */}
+          <div>
+            {isSingleWord && (
+              <Button
+                variant={isSaved ? "ghost" : "outline"}
+                size="sm"
+                onClick={saveToVocabulary}
+                disabled={isSaved || isSaving}
+                className="h-7 text-xs gap-1"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : isSaved ? (
+                  <>
+                    <BookmarkCheck className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500">Đã lưu</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus className="h-3 w-3" />
+                    <span>Lưu từ</span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Nút copy */}
           <Button
             variant="ghost"
             size="sm"
