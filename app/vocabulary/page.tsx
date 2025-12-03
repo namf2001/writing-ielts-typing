@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Search, Trash2, BookOpen, Volume2, Loader2 } from "lucide-react"
+import Image from "next/image"
+import { Search, Trash2, BookOpen, Volume2, Loader2, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -43,6 +44,86 @@ interface DictionaryData {
   phonetic?: string
   phonetics: Phonetic[]
   meanings: Meaning[]
+}
+
+// Pixabay types
+interface PixabayImage {
+  id: number
+  webformatURL: string
+  previewURL: string
+  tags: string
+  user: string
+}
+
+// Component hiển thị hình ảnh từ Pixabay
+function WordImages({ word }: { word: string }) {
+  const [images, setImages] = useState<PixabayImage[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(`/api/images?word=${encodeURIComponent(word)}`)
+        const result = await response.json()
+
+        if (result.success && result.images) {
+          setImages(result.images)
+        } else {
+          setError(result.error || "Không tìm thấy hình ảnh")
+        }
+      } catch (err) {
+        console.error("Image fetch error:", err)
+        setError("Lỗi kết nối")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchImages()
+  }, [word])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Đang tải hình ảnh...</span>
+      </div>
+    )
+  }
+
+  if (error || images.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
+        <ImageIcon className="h-4 w-4" />
+        <span>Không có hình ảnh minh họa</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="py-2">
+      <div className="grid grid-cols-4 gap-2">
+        {images.slice(0, 4).map((img) => (
+          <div key={img.id} className="relative aspect-square rounded-md overflow-hidden bg-muted">
+            <Image
+              src={img.previewURL}
+              alt={img.tags}
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-200"
+              sizes="(max-width: 768px) 25vw, 100px"
+            />
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-1 text-right">
+        Ảnh từ Pixabay
+      </p>
+    </div>
+  )
 }
 
 // Component hiển thị thông tin từ điển
@@ -273,6 +354,7 @@ export default function VocabularyPage() {
                 </div>
                 <AccordionContent className="pb-4">
                   <DictionaryInfo word={vocab.word} />
+                  <WordImages word={vocab.word} />
                 </AccordionContent>
               </AccordionItem>
             ))}
