@@ -3,6 +3,8 @@
 import { useRef, useEffect, useState } from "react"
 import { CheckCircle2, Trophy, Sparkles } from "lucide-react"
 import type { WritingMode } from "./typing-practice"
+import { useTextSelection } from "@/hooks/use-text-selection"
+import { TranslationPopup } from "./translation-popup"
 
 interface TypingAreaProps {
   text: string
@@ -31,6 +33,9 @@ export function TypingArea({
   const currentCharRef = useRef<HTMLSpanElement>(null)
   const textareaRef = useRef<HTMLDivElement>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  
+  // Hook để xử lý text selection cho translation
+  const { selection, handleMouseUp, clearSelection } = useTextSelection()
 
   useEffect(() => {
     if (isCompleted && writingMode === "ai-assisted") {
@@ -237,9 +242,10 @@ export function TypingArea({
         aria-label="Typing practice text"
         aria-live="polite"
         tabIndex={0}
+        onMouseUp={handleMouseUp}
       >
         <div className="max-w-4xl mx-auto">
-          <div className="leading-loose select-none tracking-wide">{text.split("").map(renderChar)}</div>
+          <div className="leading-loose select-text tracking-wide">{text.split("").map(renderChar)}</div>
         </div>
       </div>
 
@@ -250,9 +256,18 @@ export function TypingArea({
           <kbd className="px-1 sm:px-1.5 md:px-2 py-0.5 md:py-1 bg-secondary rounded text-[8px] sm:text-[10px] md:text-xs font-mono border border-border">
             Esc
           </kbd>{" "}
-          để tạm dừng.
+          để tạm dừng. <span className="text-primary">Bôi đen từ để tra cứu.</span>
         </p>
       </div>
+
+      {/* Translation Popup */}
+      {selection && (
+        <TranslationPopup
+          selectedText={selection.text}
+          position={selection.position}
+          onClose={clearSelection}
+        />
+      )}
     </div>
   )
 }
