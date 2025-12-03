@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, Merriweather } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "next-themes"
+import { AppLayout } from "@/components/app-layout"
 import "./globals.css"
 
 const inter = Inter({
@@ -36,7 +37,7 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {children}
+          <AppLayout>{children}</AppLayout>
         </ThemeProvider>
         <Analytics />
       </body>

@@ -15,6 +15,21 @@ const DEFAULT_TEXT = `Many people believe that social networking sites have had 
 
 Write at least 250 words.`
 
+const PRACTICE_STATE_KEY = "ielts_practice_state"
+
+interface PracticeState {
+  prompt: string
+  sampleEssay: string | null
+  text: string
+  typedText: string
+  writingMode: WritingMode
+  taskType: TaskType
+  bandTarget: number
+  topic: string
+  isPracticing: boolean // true nếu đang trong phiên luyện tập
+  savedAt: string
+}
+
 export type WritingMode = "self" | "ai-assisted"
 export type TaskType = "task1" | "task2"
 export type ViewMode = "practice" | "history"
@@ -59,8 +74,54 @@ export function TypingPractice() {
   const [isScoring, setIsScoring] = useState(false)
   const [scoreResult, setScoreResult] = useState<ScoreData | null>(null)
   const [showScore, setShowScore] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const { playKeySound, playErrorSound, playSpaceSound } = useSound()
+
+  // Load practice state từ localStorage khi mount
+  useEffect(() => {
+    const savedState = localStorage.getItem(PRACTICE_STATE_KEY)
+    if (savedState) {
+      try {
+        const state: PracticeState = JSON.parse(savedState)
+        // Chỉ khôi phục nếu đang trong phiên luyện tập
+        if (state.isPracticing && state.typedText) {
+          setPrompt(state.prompt)
+          setSampleEssay(state.sampleEssay)
+          setText(state.text)
+          setTypedText(state.typedText)
+          setCurrentIndex(state.typedText.length)
+          setWritingMode(state.writingMode)
+          setTaskType(state.taskType)
+          setBandTarget(state.bandTarget)
+          setTopic(state.topic)
+          setShowExercisePanel(false) // Không hiển thị form vì đang tiếp tục
+        }
+      } catch (e) {
+        console.error("Failed to load practice state:", e)
+      }
+    }
+    setIsInitialized(true)
+  }, [])
+
+  // Auto-save practice state khi có thay đổi
+  useEffect(() => {
+    if (!isInitialized) return
+
+    const state: PracticeState = {
+      prompt,
+      sampleEssay,
+      text,
+      typedText,
+      writingMode,
+      taskType,
+      bandTarget,
+      topic,
+      isPracticing: !showExercisePanel && typedText.length > 0,
+      savedAt: new Date().toISOString(),
+    }
+    localStorage.setItem(PRACTICE_STATE_KEY, JSON.stringify(state))
+  }, [prompt, sampleEssay, text, typedText, writingMode, taskType, bandTarget, topic, showExercisePanel, isInitialized])
 
   useEffect(() => {
     const saved = localStorage.getItem("writing-submissions")

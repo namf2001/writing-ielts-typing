@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { WritingMode, WritingPrompt } from "./writing-practice"
 
+const DRAFT_STORAGE_KEY = "ielts_writing_draft"
+
+interface DraftData {
+  essay: string
+  promptId: string | null
+  mode: WritingMode
+  savedAt: string
+}
+
 interface WritingEditorProps {
   prompt: WritingPrompt | null
   mode: WritingMode
@@ -20,12 +29,65 @@ interface WritingEditorProps {
 export function WritingEditor({ prompt, mode, bandTarget, onSubmit, isScoring }: WritingEditorProps) {
   const [essay, setEssay] = useState("")
   const [isGeneratingAssist, setIsGeneratingAssist] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const wordCount = essay.split(/\s+/).filter(Boolean).length
   const minWords = prompt?.type === "task1" ? 150 : 250
 
+  // Load draft từ localStorage khi component mount
   useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY)
+    if (savedDraft) {
+      try {
+        const draft: DraftData = JSON.parse(savedDraft)
+        // Chỉ khôi phục nếu cùng prompt hoặc mode tự viết
+        if (draft.essay && (draft.promptId === prompt?.prompt || mode === "self-write")) {
+          setEssay(draft.essay)
+          setLastSaved(new Date(draft.savedAt))
+        }
+      } catch (e) {
+        console.error("Failed to load draft:", e)
+      }
+    }
+  }, [])
+
+  // Auto-save vào localStorage khi essay thay đổi
+  useEffect(() => {
+    if (!essay.trim()) return
+
+    const timeoutId = setTimeout(() => {
+      const draftData: DraftData = {
+        essay,
+        promptId: prompt?.prompt || null,
+        mode,
+        savedAt: new Date().toISOString(),
+      }
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData))
+      setLastSaved(new Date())
+    }, 1000) // Debounce 1 giây
+
+    return () => clearTimeout(timeoutId)
+  }, [essay, prompt, mode])
+
+  // Xóa draft khi đổi prompt (trừ khi đang load lần đầu)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false)
+      return
+    }
     setEssay("")
+    localStorage.removeItem(DRAFT_STORAGE_KEY)
+    setLastSaved(null)
   }, [prompt])
+
+  // Xóa draft sau khi submit thành công
+  const handleSubmit = () => {
+    if (wordCount >= minWords && prompt) {
+      onSubmit(essay)
+      localStorage.removeItem(DRAFT_STORAGE_KEY)
+      setLastSaved(null)
+    }
+  }
 
   const handleGenerateAssist = async () => {
     if (!prompt) return
@@ -48,12 +110,6 @@ export function WritingEditor({ prompt, mode, bandTarget, onSubmit, isScoring }:
       console.error("Failed to generate assist:", error)
     } finally {
       setIsGeneratingAssist(false)
-    }
-  }
-
-  const handleSubmit = () => {
-    if (wordCount >= minWords && prompt) {
-      onSubmit(essay)
     }
   }
 
@@ -114,6 +170,11 @@ export function WritingEditor({ prompt, mode, bandTarget, onSubmit, isScoring }:
             </span>
             {wordCount < minWords && (
               <span className="text-xs text-muted-foreground">(còn thiếu {minWords - wordCount} từ)</span>
+            )}
+            {lastSaved && (
+              <span className="text-xs text-muted-foreground">
+                Đã lưu lúc {lastSaved.toLocaleTimeString("vi-VN")}
+              </span>
             )}
           </div>
 
