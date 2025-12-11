@@ -409,6 +409,9 @@ export function TypingPractice() {
 
   const handleViewSubmission = (submission: Submission) => {
     setScoreResult(submission.score)
+    setPrompt(submission.prompt)
+    setTypedText(submission.essay)
+    setTaskType(submission.taskType)
     setShowScore(true)
   }
 
@@ -510,6 +513,9 @@ export function TypingPractice() {
       {showScore && scoreResult && (
         <ScoreResult
           result={scoreResult}
+          essay={typedText}
+          prompt={prompt}
+          taskType={taskType}
           onClose={() => setShowScore(false)}
           onRetry={() => {
             setShowScore(false)
