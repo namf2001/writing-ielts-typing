@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import { CheckCircle2, Trophy, Sparkles } from "lucide-react"
-import type { WritingMode } from "./typing-practice"
+import { type WritingMode } from "@/lib/storage"
 import { useTextSelection } from "@/hooks/use-text-selection"
 import { TranslationPopup } from "./translation-popup"
 

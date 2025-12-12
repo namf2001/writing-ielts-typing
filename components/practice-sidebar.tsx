@@ -5,6 +5,7 @@ import { Volume2, VolumeX, Keyboard, RotateCcw, HelpCircle, Sun, Moon, Send, Loa
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTheme } from "next-themes"
+import { type WritingMode } from "@/lib/storage"
 
 interface PracticeSidebarProps {
   showKeyboard: boolean
@@ -16,7 +17,7 @@ interface PracticeSidebarProps {
   canScore: boolean
   isScoring: boolean
   onScore: () => void
-  writingMode: "self" | "ai-assisted"
+  writingMode: WritingMode
 }
 
 export function PracticeSidebar({

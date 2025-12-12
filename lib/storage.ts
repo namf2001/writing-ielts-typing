@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid"
 
 // ===== TYPES =====
-export type WritingMode = "self" | "ai-assisted"
+export type WritingMode = "self" | "ai-assisted" | "translation"
 export type TaskType = "task1" | "task2"
 
 export interface Exercise {

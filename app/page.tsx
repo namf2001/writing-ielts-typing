@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Sparkles, PenLine, ArrowRight, GraduationCap, Laptop, Leaf, Heart, Users, TrendingUp, Palette, Filter, Plus, BookOpen } from "lucide-react"
+import { Sparkles, PenLine, ArrowRight, GraduationCap, Laptop, Leaf, Heart, Users, TrendingUp, Palette, Filter, Plus, BookOpen, Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -43,8 +43,10 @@ export default function HomePage() {
   const [bandTarget, setBandTarget] = useState(7)
   const [prompt, setPrompt] = useState("")
   const [sampleEssay, setSampleEssay] = useState<string | null>(null)
+  const [vietnameseEssay, setVietnameseEssay] = useState<string | null>(null)
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [isGeneratingEssay, setIsGeneratingEssay] = useState(false)
+  const [isGeneratingVietnamese, setIsGeneratingVietnamese] = useState(false)
 
   // Filter exercises
   const filteredExercises = useMemo(() => {
@@ -126,6 +128,29 @@ export default function HomePage() {
     }
   }
 
+  const generateVietnameseEssay = async () => {
+    if (!prompt) return
+    setIsGeneratingVietnamese(true)
+    try {
+      const res = await fetch("/api/generate-vietnamese-essay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, taskType, bandTarget }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        alert(data.error)
+        return
+      }
+      setVietnameseEssay(data.essay)
+    } catch (error) {
+      console.error("Failed to generate Vietnamese essay:", error)
+      alert("Lỗi kết nối. Vui lòng thử lại.")
+    } finally {
+      setIsGeneratingVietnamese(false)
+    }
+  }
+
   const startPractice = () => {
     if (!prompt) {
       alert("Vui lòng tạo đề bài trước")
@@ -135,15 +160,25 @@ export default function HomePage() {
       alert("Vui lòng tạo bài mẫu trước khi luyện tập")
       return
     }
+    if (writingMode === "translation" && !vietnameseEssay) {
+      alert("Vui lòng tạo bài văn tiếng Việt trước khi luyện tập")
+      return
+    }
+    
     const exercise = createExercise({
       prompt,
-      sampleEssay,
+      sampleEssay: writingMode === "translation" ? vietnameseEssay : sampleEssay,
       taskType,
       topic,
       bandTarget,
       writingMode,
     })
-    router.push(`/practice/${exercise.id}`)
+    
+    if (writingMode === "translation") {
+      router.push(`/practice/translation/${exercise.id}`)
+    } else {
+      router.push(`/practice/${exercise.id}`)
+    }
   }
 
   const getTopicLabel = (topicId: string) => {
@@ -293,8 +328,13 @@ export default function HomePage() {
               <CardContent>
                 <RadioGroup
                   value={writingMode}
-                  onValueChange={(v) => setWritingMode(v as WritingMode)}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  onValueChange={(v) => {
+                    setWritingMode(v as WritingMode)
+                    // Reset essays when changing mode
+                    setSampleEssay(null)
+                    setVietnameseEssay(null)
+                  }}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
                   <Label
                     htmlFor="ai-assisted"
@@ -327,6 +367,23 @@ export default function HomePage() {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Tự viết bài theo đề, AI chấm điểm và nhận xét
+                      </p>
+                    </div>
+                  </Label>
+                  <Label
+                    htmlFor="translation"
+                    className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                      writingMode === "translation" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <RadioGroupItem value="translation" id="translation" className="mt-1" />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Languages className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Dịch Việt - Anh</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Dịch từng câu từ tiếng Việt sang tiếng Anh, AI nhận xét
                       </p>
                     </div>
                   </Label>
@@ -448,12 +505,49 @@ export default function HomePage() {
               </Card>
             )}
 
+            {/* Vietnamese Essay */}
+            {writingMode === "translation" && prompt && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Bài văn tiếng Việt</CardTitle>
+                      <CardDescription>AI sẽ tạo bài văn tiếng Việt để bạn dịch</CardDescription>
+                    </div>
+                    <Button onClick={generateVietnameseEssay} disabled={isGeneratingVietnamese || !prompt}>
+                      {isGeneratingVietnamese ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                          Đang tạo...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Tạo bài văn
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                {vietnameseEssay && (
+                  <CardContent>
+                    <div className="p-4 bg-muted rounded-lg max-h-[300px] overflow-y-auto">
+                      <p className="whitespace-pre-wrap text-sm">{vietnameseEssay}</p>
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {vietnameseEssay.split(/\s+/).filter(Boolean).length} từ
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            )}
+
             {/* Start Button */}
             <div className="flex justify-center">
               <Button
                 size="lg"
                 onClick={startPractice}
-                disabled={!prompt || (writingMode === "ai-assisted" && !sampleEssay)}
+                disabled={!prompt || (writingMode === "ai-assisted" && !sampleEssay) || (writingMode === "translation" && !vietnameseEssay)}
                 className="gap-2"
               >
                 Bắt đầu luyện tập
