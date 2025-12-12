@@ -243,7 +243,7 @@ export function AnnotatedEssay({ essay, annotations }: AnnotatedEssayProps) {
                     {annotation.correctedText && (
                       <div className="bg-accent/10 rounded-lg p-3 border border-accent/30">
                         <p className="text-xs font-semibold text-muted-foreground mb-2">✨ ĐỀ XUẤT SỬA:</p>
-                        <p className="text-sm text-accent-foreground font-medium leading-relaxed">
+                        <p className="text-sm font-medium leading-relaxed">
                           "{annotation.correctedText}"
                         </p>
                       </div>

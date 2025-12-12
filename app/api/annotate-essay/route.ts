@@ -129,6 +129,11 @@ Cho mỗi annotation:
 7. **impact**: Ảnh hưởng đến band score
 8. **examples**: (Optional) 1-2 ví dụ cải thiện
 
+**QUY TẮC ĐẶC BIỆT CHO LỖI CHÍNH TẢ (spelling):**
+- CHỈ đánh dấu ĐÚNG TỪ SAI, KHÔNG đánh dấu cả câu hay cả cụm từ
+- Ví dụ: Nếu câu là "In many conutries today" và "conutries" sai chính tả, thì text chỉ là "conutries", KHÔNG PHẢI "In many conutries today"
+- Mỗi từ sai chính tả = 1 annotation riêng biệt
+
 Lưu ý:
 - Mỗi đoạn text chỉ được đánh dấu MỘT LẦN
 - Các đoạn KHÔNG ĐƯỢC CHỒNG CHÉO lên nhau
