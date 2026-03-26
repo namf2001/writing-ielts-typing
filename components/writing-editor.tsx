@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { WritingMode, WritingPrompt } from "./writing-practice"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 const DRAFT_STORAGE_KEY = "ielts_writing_draft"
 
@@ -138,7 +140,9 @@ export function WritingEditor({ prompt, mode, bandTarget, onSubmit, isScoring }:
                 <Badge className="bg-primary/10 text-primary text-xs">Target: Band {bandTarget}</Badge>
               )}
             </div>
-            <CardTitle className="text-base font-medium leading-relaxed">{prompt.prompt}</CardTitle>
+            <div className="text-base font-medium leading-relaxed prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt.prompt}</ReactMarkdown>
+            </div>
           </div>
         </div>
       </CardHeader>

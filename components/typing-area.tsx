@@ -6,6 +6,8 @@ import { type WritingMode } from "@/lib/storage"
 import { useTextSelection } from "@/hooks/use-text-selection"
 import { TranslationPopup } from "./translation-popup"
 import { Button } from "@/components/ui/button"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface TypingAreaProps {
   text: string
@@ -191,7 +193,9 @@ export function TypingArea({
         {prompt && (
           <div className="px-4 sm:px-6 md:px-8 lg:px-16 py-3 md:py-4 border-b border-border/50 bg-secondary/30 shrink-0">
             <p className="text-xs md:text-sm text-muted-foreground mb-1">Đề bài:</p>
-            <p className="text-sm md:text-base text-foreground/80 italic">{prompt}</p>
+            <div className="text-sm md:text-base text-foreground/80 prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt}</ReactMarkdown>
+            </div>
           </div>
         )}
 
@@ -257,7 +261,9 @@ export function TypingArea({
       {prompt && prompt !== text && (
         <div className="px-4 sm:px-6 md:px-8 lg:px-16 py-3 md:py-4 border-b border-border/50 bg-secondary/30 shrink-0">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Đề bài:</p>
-          <p className="text-sm md:text-base text-foreground/80 italic">{prompt}</p>
+          <div className="text-sm md:text-base text-foreground/80 prose prose-sm max-w-none dark:prose-invert">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt}</ReactMarkdown>
+          </div>
         </div>
       )}
 

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { WritingMode, TaskType } from "./typing-practice"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface ExercisePanelProps {
   topic: string
@@ -171,7 +173,9 @@ export function ExercisePanel({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Đề bài</Label>
               <div className="p-3 md:p-4 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{prompt}</p>
+                <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt}</ReactMarkdown>
+                </div>
               </div>
             </div>
           )}
