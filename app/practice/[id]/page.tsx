@@ -327,6 +327,9 @@ export default function PracticePage() {
               isCompleted={isCompleted}
               wpm={wpm}
               accuracy={accuracy}
+              onSubmit={scoreEssay}
+              isScoring={isScoring}
+              canScore={typedText.length >= 50 && !isScoring}
             />
           </div>
         </div>
@@ -334,7 +337,7 @@ export default function PracticePage() {
 
       {/* Keyboard - fixed at bottom (using flex, not position:fixed) */}
       {showKeyboard && (
-        <div className="flex-shrink-0 border-t border-border">
+        <div className="shrink-0 border-t border-border">
           <VirtualKeyboard activeKey={activeKey} nextKey={text[currentIndex] || ""} />
         </div>
       )}

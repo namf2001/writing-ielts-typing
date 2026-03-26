@@ -471,6 +471,9 @@ export function TypingPractice() {
                 isCompleted={isCompleted}
                 wpm={wpm}
                 accuracy={accuracy}
+                onSubmit={scoreEssay}
+                isScoring={isScoring}
+                canScore={typedText.length >= 50 && !isScoring && viewMode === "practice"}
               />
             </main>
           </div>

@@ -5,6 +5,7 @@ import { CheckCircle2, Trophy, Sparkles } from "lucide-react"
 import { type WritingMode } from "@/lib/storage"
 import { useTextSelection } from "@/hooks/use-text-selection"
 import { TranslationPopup } from "./translation-popup"
+import { Button } from "@/components/ui/button"
 
 interface TypingAreaProps {
   text: string
@@ -16,6 +17,9 @@ interface TypingAreaProps {
   isCompleted?: boolean
   wpm?: number
   accuracy?: number
+  onSubmit?: () => void
+  isScoring?: boolean
+  canScore?: boolean
 }
 
 export function TypingArea({ 
@@ -27,7 +31,10 @@ export function TypingArea({
   writingMode = "ai-assisted",
   isCompleted = false,
   wpm = 0,
-  accuracy = 100
+  accuracy = 100,
+  onSubmit,
+  isScoring = false,
+  canScore = false
 }: TypingAreaProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentCharRef = useRef<HTMLSpanElement>(null)
@@ -208,11 +215,11 @@ export function TypingArea({
         </div>
 
         {/* Footer với word count - fixed tại bottom */}
-        <div className="shrink-0 border-t border-border/50 bg-background/95 backdrop-blur-sm py-2 px-4">
-          <div className="flex items-center justify-center gap-4 text-muted-foreground text-[10px] sm:text-xs md:text-sm">
+        <div className="shrink-0 border-t border-border/50 bg-background/95 backdrop-blur-sm py-2 px-4 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-muted-foreground text-[10px] sm:text-xs md:text-sm">
             <span className="font-medium">{wordCount} từ</span>
-            <span>•</span>
-            <span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">
               Nhấn{" "}
               <kbd className="px-1 sm:px-1.5 md:px-2 py-0.5 md:py-1 bg-secondary rounded text-[8px] sm:text-[10px] md:text-xs font-mono border border-border">
                 Esc
@@ -220,6 +227,25 @@ export function TypingArea({
               để tạm dừng
             </span>
           </div>
+
+          <Button 
+            onClick={onSubmit} 
+            disabled={!canScore || isScoring} 
+            className="gap-2 h-8 text-xs sm:text-sm"
+            size="sm"
+          >
+            {isScoring ? (
+              <>
+                <div className="h-3 w-3 sm:h-4 sm:w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Đang chấm...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                Nộp bài
+              </>
+            )}
+          </Button>
         </div>
       </div>
     )
