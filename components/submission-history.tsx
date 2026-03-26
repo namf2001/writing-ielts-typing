@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { ScoreData, TaskType, WritingMode } from "./typing-practice"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 export interface Submission {
   id: string
@@ -182,7 +184,9 @@ export function SubmissionHistory({
                       {submission.writingMode === "ai-assisted" ? "AI hỗ trợ" : "Tự viết"}
                     </Badge>
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{submission.prompt}</p>
+                  <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2 prose prose-sm max-w-none dark:prose-invert prose-p:my-0 prose-headings:my-0 prose-table:my-0">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{submission.prompt}</ReactMarkdown>
+                  </div>
                   <div className="flex items-center gap-2 sm:gap-3 mt-1.5 text-[10px] sm:text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
