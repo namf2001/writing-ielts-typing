@@ -89,16 +89,126 @@
       "topic": "education",
       "bandTarget": 7,
       "writingMode": "ai-assisted"
+    },
+    {
+      "id": "trans-1",
+      "prompt": "Some people believe that universities should focus on providing academic skills, while others think they should prepare students for employment. Discuss both views and give your opinion.",
+      "sampleEssay": "Trong thế giới hiện đại, vai trò của các trường đại học đã trở thành chủ đề của những cuộc tranh luận sôi nổi. Trong khi một số người cho rằng các cơ sở giáo dục đại học nên tập trung chủ yếu vào việc truyền đạt kiến thức học thuật, những người khác lại khẳng định rằng việc chuẩn bị cho sinh viên bước vào thị trường việc làm phải là ưu tiên hàng đầu. Bài viết này sẽ phân tích cả hai góc nhìn trước khi đưa ra quan điểm cá nhân của tôi.\n\nMột mặt, những người ủng hộ nền giáo dục chú trọng học thuật cho rằng trường đại học là trung tâm của tri thức và sự phát triển trí tuệ. Họ tin rằng mục đích cốt lõi của giáo dục đại học là nuôi dưỡng tư duy phản biện, kỹ năng nghiên cứu và sự hiểu biết sâu sắc về các lĩnh vực khác nhau. Cách tiếp cận này tạo ra những cá nhân toàn diện, có khả năng đóng góp cho xã hội thông qua sự đổi mới sáng tạo và các công trình nghiên cứu học thuật. Hơn nữa, các kỹ năng học thuật như tư duy phân tích và giải quyết vấn đề có tính chuyển giao cao và có thể áp dụng trong nhiều con đường sự nghiệp khác nhau.\n\nMặt khác, những người ủng hộ giáo dục định hướng việc làm nhấn mạnh thực tế cạnh tranh của thị trường lao động ngày nay. Họ lập luận rằng sinh viên đầu tư lượng lớn thời gian và tài chính vào việc học với kỳ vọng nhận lại cơ hội nghề nghiệp tương xứng. Các trường đại học chú trọng vào kỹ năng thực hành, chương trình thực tập và mạng lưới đối tác doanh nghiệp sẽ giúp sinh viên tốt nghiệp sẵn sàng hơn cho công việc. Cách tiếp cận này cũng thúc đẩy nền kinh tế phát triển nhờ cung cấp lực lượng lao động tay nghề cao đáp ứng đúng nhu cầu xã hội.\n\nTheo quan điểm của tôi, một giải pháp cân bằng giữa hai yếu tố là phương án tối ưu nhất. Các trường đại học nên duy trì cam kết về chất lượng học thuật xuất sắc, đồng thời tích hợp các kỹ năng thực tế và định hướng nghề nghiệp vào chương trình giảng dạy. Điều này có thể đạt được thông qua các chương trình kết hợp lý thuyết với ứng dụng thực tiễn, liên kết với các doanh nghiệp đầu ngành và cung cấp dịch vụ hướng nghiệp chất lượng cao.\n\nTóm lại, mặc dù cả hai cách tiếp cận đều có những giá trị riêng, các trường đại học nên nỗ lực cung cấp một nền giáo dục toàn diện, chuẩn bị cho sinh viên cả về năng lực trí tuệ lẫn thành công trong sự nghiệp tương lai.",
+      "taskType": "task2",
+      "topic": "education",
+      "bandTarget": 7.5,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-2",
+      "prompt": "The rapid advance of artificial intelligence and automation is transforming the workplace. Discuss the advantages and disadvantages of this trend.",
+      "sampleEssay": "Sự phát triển vượt bậc của trí tuệ nhân tạo và công nghệ tự động hóa đang tạo ra những thay đổi sâu sắc trong môi trường làm việc hiện đại. Xu hướng công nghệ này mang lại cả những lợi ích to lớn lẫn những thách thức đáng kể cần được cân nhắc kỹ lưỡng.\n\nVề mặt tích cực, việc ứng dụng trí tuệ nhân tạo giúp nâng cao đáng kể năng suất và hiệu quả vận hành của doanh nghiệp. Các hệ thống máy học và robot có thể thực hiện những công việc lặp đi lặp lại với tốc độ vượt trội và độ chính xác gần như tuyệt đối, giúp giảm thiểu sai sót do con người gây ra. Điều này giải phóng người lao động khỏi những công việc chân tay nặng nhọc, cho phép họ tập trung vào những nhiệm vụ đòi hỏi tư duy chiến lược, sự sáng tạo và kỹ năng giao tiếp giữa các cá nhân. Bên cạnh đó, làn sóng công nghệ mới này cũng tạo ra nhiều cơ hội việc làm mới trong các lĩnh vực tiên tiến như khoa học dữ liệu, an ninh mạng và kỹ thuật thuật toán.\n\nTuy nhiên, sự tự động hóa cũng tiềm ẩn nhiều hệ lụy xã hội nghiêm trọng. Mối lo ngại lớn nhất là nguy cơ thất nghiệp cơ cấu đối với những người lao động không kịp nâng cao kỹ năng để thích ứng với kỷ nguyên số. Những vị trí công việc truyền thống trong ngành sản xuất, vận tải và dịch vụ khách hàng đang dần bị thay thế bởi máy móc, dẫn đến sự gia tăng khoảng cách giàu nghèo và bất bình đẳng kinh tế. Hơn nữa, sự phụ thuộc quá mức vào các thuật toán thông minh cũng có thể làm giảm khả năng tư duy độc lập và kỹ năng ra quyết định của con người trong những tình huống phức tạp.\n\nTóm lại, sự trỗi dậy của trí tuệ nhân tạo là một bước tiến không thể đảo ngược của nhân loại. Để tối ưu hóa lợi ích và hạn chế rủi ro, chính phủ và các tổ chức giáo dục cần chủ động thực hiện các chương trình đào tạo lại kỹ năng số cho lực lượng lao động hiện tại.",
+      "taskType": "task2",
+      "topic": "technology",
+      "bandTarget": 7.5,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-3",
+      "prompt": "Climate change is one of the most pressing global issues today. What are the main causes, and what measures should be taken to tackle it?",
+      "sampleEssay": "Biến đổi khí hậu đang được công nhận là một trong những thách thức môi trường cấp bách nhất đe dọa sự tồn vong của nhân loại trong thế kỷ 21. Hiện tượng này bắt nguồn từ nhiều nguyên nhân phức tạp và đòi hỏi những hành động quyết liệt từ cả chính phủ lẫn từng cá nhân.\n\nNguyên nhân hàng đầu của sự ấm lên toàn cầu là lượng khí thải nhà kính khổng lồ sinh ra từ các hoạt động của con người. Việc đốt nhiên liệu hóa thạch như than đá, dầu mỏ và khí đốt để sản xuất năng lượng và phục vụ giao thông đã làm gia tăng đáng kể nồng độ khí carbon dioxide trong khí quyển. Bên cạnh đó, nạn phá rừng tràn lan nhằm mở rộng đất nông nghiệp và đô thị hóa đã làm suy giảm nghiêm trọng khả năng hấp thụ khí thải tự nhiên của Trái Đất. Hoạt động chăn nuôi gia súc quy mô công nghiệp và xả rác thải không qua xử lý cũng đóng góp một lượng lớn khí methane độc hại gây hiệu ứng nhà kính.\n\nĐể giải quyết cuộc khủng hoảng này, cần phải triển khai đồng bộ nhiều giải pháp thiết thực. Các chính phủ cần ban hành các đạo luật nghiêm ngặt nhằm hạn chế khí thải công nghiệp và áp dụng mức thuế carbon đối với các doanh nghiệp gây ô nhiễm. Đồng thời, việc đầu tư mạnh mẽ vào các nguồn năng lượng tái tạo như điện gió, năng lượng mặt trời và mạng lưới giao thông công cộng là yếu tố then chốt để giảm bớt sự phụ thuộc vào nhiên liệu hóa thạch. Về phía cá nhân, mỗi người dân có thể đóng góp bằng cách hình thành thói quen sống xanh như tiết kiệm điện, giảm thiểu rác thải nhựa và ưu tiên sử dụng các phương tiện di chuyển thân thiện với môi trường.\n\nKết luận lại, bảo vệ khí hậu Trái Đất là trách nhiệm chung của toàn thể cộng đồng quốc tế. Chỉ khi có sự chung tay hành động kịp thời và cam kết lâu dài từ mọi quốc gia, chúng ta mới có thể bảo vệ được hành tinh cho các thế hệ tương lai.",
+      "taskType": "task2",
+      "topic": "environment",
+      "bandTarget": 7,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-4",
+      "prompt": "In many countries, the proportion of elderly people is increasing. What problems does this cause, and what solutions can be suggested?",
+      "sampleEssay": "Xu hướng già hóa dân số đang diễn ra nhanh chóng tại nhiều quốc gia phát triển và đang phát triển trên khắp thế giới. Sự chuyển dịch nhân khẩu học này mang lại những hệ lụy sâu sắc đối với sự phát triển kinh tế và cấu trúc an sinh xã hội.\n\nVấn đề đáng quan ngại nhất là gánh nặng khổng lồ đè nặng lên hệ thống y tế công cộng và quỹ hưu trí quốc gia. Người cao tuổi thường có nhu cầu chăm sóc sức khỏe thường xuyên và điều trị các bệnh mãn tính tốn kém, dẫn đến sự quá tải tại các bệnh viện và viện dưỡng lão. Đồng thời, sự sụt giảm tỷ lệ người trong độ tuổi lao động so với số người nghỉ hưu có nguy cơ khiến hệ thống lương hưu mất cân đối tài chính nghiêm trọng. Sự thiếu hụt nguồn nhân lực trẻ cũng làm suy giảm năng suất lao động tổng thể và kìm hãm tốc độ tăng trưởng kinh tế của đất nước.\n\nĐể ứng phó với tình trạng này, các quốc gia cần áp dụng các chính sách linh hoạt và toàn diện. Một biện pháp khả thi là từng bước nâng tuổi nghỉ hưu để tận dụng triệt để kinh nghiệm chuyên môn quý báu của những người lao động cao tuổi còn đủ sức khỏe. Chính phủ cũng nên khuyến khích các chương trình chăm sóc sức khỏe chủ động và phòng ngừa bệnh tật sớm cho người già nhằm giảm bớt chi phí điều trị sau này. Ngoài ra, việc nới lỏng chính sách nhập cư cho lao động trẻ có tay nghề và ban hành các chính sách hỗ trợ tài chính để khuyến khích các cặp vợ chồng trẻ sinh thêm con cũng là những giải pháp chiến lược dài hạn.\n\nTóm lại, dân số già hóa là một thách thức không thể tránh khỏi của quá trình phát triển xã hội. Bằng cách thực thi các chính sách điều chỉnh kịp thời và nhân văn, các quốc gia hoàn toàn có thể biến thách thức này thành cơ hội để xây dựng một xã hội gắn kết và bền vững hơn.",
+      "taskType": "task2",
+      "topic": "society",
+      "bandTarget": 7.5,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-5",
+      "prompt": "Some people believe that increasing the number of sports facilities is the best way to improve public health. Others think that more comprehensive measures are required. Discuss both views.",
+      "sampleEssay": "Sức khỏe cộng đồng luôn là một trong những ưu tiên hàng đầu của mọi chính phủ trong thời kỳ hiện đại. Trong khi nhiều ý kiến cho rằng việc xây dựng thêm các trung tâm thể thao là giải pháp tối ưu, những người khác lại lập luận rằng cần có những biện pháp toàn diện hơn để cải thiện thể trạng của người dân.\n\nMột mặt, việc gia tăng số lượng các cơ sở thể thao công cộng mang lại những lợi ích thể chất rõ rệt. Khi người dân có thể dễ dàng tiếp cận các phòng tập gym, hồ bơi và sân thể thao miễn phí hoặc giá rẻ ngay gần nơi sinh sống, họ sẽ có thêm động lực để rèn luyện thân thể đều đặn hàng ngày. Thói quen vận động thường xuyên giúp kiểm soát cân nặng, giảm thiểu nguy cơ mắc các bệnh tim mạch và cải thiện sức khỏe tinh thần đáng kể. Hơn nữa, các sân chơi thể thao còn là không gian giao lưu gắn kết cộng đồng, tạo nên một lối sống lành mạnh cho thanh thiếu niên.\n\nMặt khác, việc chỉ đơn thuần xây thêm cơ sở vật chất là chưa đủ để giải quyết tận gốc các vấn đề sức khỏe của xã hội. Thói quen ăn uống không lành mạnh, việc tiêu thụ thực phẩm chế biến sẵn chứa nhiều đường và chất béo, cùng với áp lực công việc căng thẳng mới là những nguyên nhân chính gây ra các bệnh mãn tính nguy hiểm. Do đó, chính phủ cần chú trọng vào công tác truyền thông giáo dục dinh dưỡng học đường và kiểm soát chặt chẽ quảng cáo đồ ăn nhanh đối với trẻ em. Việc xây dựng môi trường sống trong lành với nhiều công viên cây xanh và làn đường dành cho xe đạp cũng thúc đẩy người dân vận động một cách tự nhiên hơn.\n\nTheo quan điểm của tôi, giải pháp hiệu quả nhất là sự kết hợp đồng bộ giữa việc cung cấp cơ sở hạ tầng thể thao và các chương trình nâng cao nhận thức cộng đồng. Đầu tư vào giáo dục lối sống lành mạnh song song với phát triển tiện ích công cộng sẽ mang lại sự cải thiện bền vững cho sức khỏe toàn dân.",
+      "taskType": "task2",
+      "topic": "health",
+      "bandTarget": 7,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-6",
+      "prompt": "Economic development is often believed to cause damage to the environment. To what extent do you agree or disagree with this view?",
+      "sampleEssay": "Mối quan hệ tương hỗ giữa tăng trưởng kinh tế và bảo vệ môi trường sinh thái là một đề tài thu hút sự quan tâm sâu sắc của các nhà hoạch định chính sách toàn cầu. Tôi hoàn toàn đồng ý rằng sự phát triển kinh tế thiếu kiểm soát là nguyên nhân trực tiếp dẫn đến sự suy thoái môi trường nghiêm trọng.\n\nTrước hết, hoạt động công nghiệp hóa ồ ạt đòi hỏi sự khai thác cạn kiệt các nguồn tài nguyên thiên nhiên quý giá của Trái Đất. Để phục vụ nhu cầu sản xuất hàng hóa và mở rộng đô thị, hàng triệu hecta rừng nguyên sinh đã bị đốn hạ, kéo theo sự hủy diệt môi trường sống tự nhiên của vô số loài động thực vật. Các nhà máy công nghiệp và khu chế xuất xả thải hàng triệu tấn hóa chất độc hại vào sông ngòi và bầu khí quyển mỗi ngày, gây ra hiện tượng ô nhiễm nguồn nước ngầm và mưa axit phá hủy hệ sinh thái nông nghiệp.\n\nHơn nữa, nền kinh tế tiêu dùng hiện đại khuyến khích mô hình mua sắm và thải bỏ nhanh chóng, tạo ra lượng rác thải khổng lồ chưa từng có trong lịch sử. Đồ nhựa dùng một lần và các thiết bị điện tử bị vứt bỏ sau thời gian ngắn sử dụng đang làm tắc nghẽn các bãi chôn lấp và đại dương, mất hàng trăm năm mới có thể phân hủy hoàn toàn. Trong khi các tập đoàn lớn thu được lợi nhuận khổng lồ, cái giá phải trả về sức khỏe của người dân và sự suy giảm chất lượng môi trường sống là không thể đong đếm được.\n\nTuy nhiên, điều này không có nghĩa là chúng ta phải từ bỏ phát triển kinh tế, mà cần phải chuyển đổi sang mô hình kinh tế tuần hoàn và kinh tế xanh. Các quốc gia tiên tiến đã chứng minh rằng việc áp dụng công nghệ sạch, năng lượng tái tạo và tái chế vật liệu có thể vừa duy trì tăng trưởng vừa bảo tồn thiên nhiên.\n\nTóm lại, sự tăng trưởng kinh tế truyền thống quả thực gây tổn hại nghiêm trọng đến môi trường tự nhiên. Chỉ khi nhân loại kiên quyết theo đuổi con đường phát triển bền vững, chúng ta mới có thể hài hòa được mục tiêu thịnh vượng kinh tế và bảo vệ hành tinh xanh.",
+      "taskType": "task2",
+      "topic": "economy",
+      "bandTarget": 8,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-7",
+      "prompt": "Many traditional customs and cultural celebrations are fading away in modern society. Why is this happening, and how can we preserve them?",
+      "sampleEssay": "Trong kỷ nguyên toàn cầu hóa và hội nhập quốc tế sâu rộng, nhiều phong tục tập quán truyền thống và các lễ hội văn hóa dân gian đang dần bị mai một và lãng quên. Sự suy giảm này xuất phát từ những biến chuyển nhanh chóng trong lối sống hiện đại và đòi hỏi những nỗ lực bảo tồn thiết thực.\n\nNguyên nhân chủ yếu của hiện tượng này là sự xâm lấn mạnh mẽ của văn hóa đại chúng phương Tây và lối sống thực dụng của giới trẻ. Dưới sự phát triển bùng nổ của mạng xã hội và phương tiện truyền thông đa phương tiện, các bạn trẻ ngày nay bị cuốn hút nhiều hơn bởi các ngày lễ hiện đại như Giáng sinh hay Halloween thay vì tìm hiểu các nghi lễ truyền thống của quê hương. Thêm vào đó, nhịp sống đô thị hối hả và áp lực công việc khiến các gia đình có ít thời gian sum họp để tổ chức các lễ kỷ niệm mang tính nghi thức cổ truyền vốn đòi hỏi nhiều công đoạn chuẩn bị cầu kỳ.\n\nĐể bảo vệ di sản văn hóa quý báu của dân tộc, cần có sự phối hợp đồng bộ giữa ngành giáo dục và các cơ quan văn hóa truyền thông. Các trường học nên đưa lịch sử văn hóa dân gian và các trải nghiệm lễ hội truyền thống vào chương trình giảng dạy ngoại khóa nhằm khơi dậy niềm tự hào dân tộc cho học sinh từ lứa tuổi nhỏ. Chính quyền các địa phương cũng cần hiện đại hóa cách thức tổ chức các lễ hội truyền thống, kết hợp các yếu tố nghệ thuật đương đại và quảng bá trên các nền tảng kỹ thuật số để thu hút sự quan tâm của du khách và giới trẻ.\n\nTóm lại, bản sắc văn hóa là linh hồn của mỗi dân tộc trong tiến trình hội nhập thế giới. Việc chủ động gìn giữ và làm mới các giá trị truyền thống sẽ giúp chúng ta vừa phát triển hiện đại mà vẫn giữ vững được cội nguồn văn hóa độc đáo của đất nước.",
+      "taskType": "task2",
+      "topic": "culture",
+      "bandTarget": 7.5,
+      "writingMode": "translation"
+    },
+    {
+      "id": "trans-8",
+      "prompt": "The line graph below shows the percentage of electricity generated from renewable sources in four countries between 2000 and 2025. Summarise the information by selecting and reporting the main features.",
+      "sampleEssay": "Biểu đồ đường cung cấp thông tin so sánh về tỷ lệ phần trăm lượng điện được sản xuất từ các nguồn năng lượng tái tạo tại bốn quốc gia khác nhau trong giai đoạn từ năm 2000 đến năm 2025.\n\nNhìn chung, có thể thấy rõ rằng tỷ lệ sử dụng năng lượng tái tạo ở cả bốn quốc gia đều có xu hướng tăng lên đáng kể trong toàn bộ khoảng thời gian được khảo sát. Trong đó, Quốc gia A luôn duy trì vị trí dẫn đầu về tỷ trọng sản xuất điện sạch, trong khi Quốc gia D ghi nhận tốc độ tăng trưởng ấn tượng nhất trong giai đoạn sau.\n\nVào năm 2000, Quốc gia A bắt đầu ở mức cao nhất với khoảng 25% tổng sản lượng điện từ năng lượng tái tạo, trước khi tăng đều đặn để đạt gần 45% vào năm 2025. Tương tự, Quốc gia B cũng chứng kiến mức tăng trưởng ổn định từ 18% lên khoảng 32% vào cuối kỳ. Sự gia tăng liên tục này phản ánh cam kết mạnh mẽ của cả hai quốc gia trong việc chuyển đổi sang nền kinh tế phát thải thấp.\n\nNgược lại, Quốc gia C và Quốc gia D khởi đầu ở mức tương đối khiêm tốn, chỉ chiếm lần lượt 8% và 5% vào năm 2000. Mặc dù Quốc gia C chỉ tăng nhẹ lên 15% vào năm 2025, Quốc gia D lại có sự bứt phá ngoạn mục kể từ sau năm 2015, vươn lên đạt mốc 28% vào năm cuối của giai đoạn dự báo, vượt qua cả Quốc gia C.\n\nTóm lại, bức tranh tổng thể cho thấy sự chuyển dịch rõ rệt của các quốc gia hướng tới các nguồn năng lượng xanh và bền vững hơn.",
+      "taskType": "task1",
+      "topic": "environment",
+      "bandTarget": 7.5,
+      "writingMode": "translation"
     }
   ],
   "topics": [
-    { "id": "education", "label": "Giáo dục", "icon": "GraduationCap" },
-    { "id": "technology", "label": "Công nghệ", "icon": "Laptop" },
-    { "id": "environment", "label": "Môi trường", "icon": "Leaf" },
-    { "id": "health", "label": "Sức khỏe", "icon": "Heart" },
-    { "id": "society", "label": "Xã hội", "icon": "Users" },
-    { "id": "economy", "label": "Kinh tế", "icon": "TrendingUp" },
-    { "id": "culture", "label": "Văn hóa", "icon": "Palette" }
+    {
+      "id": "education",
+      "label": "Giáo dục",
+      "icon": "GraduationCap"
+    },
+    {
+      "id": "technology",
+      "label": "Công nghệ",
+      "icon": "Laptop"
+    },
+    {
+      "id": "environment",
+      "label": "Môi trường",
+      "icon": "Leaf"
+    },
+    {
+      "id": "health",
+      "label": "Sức khỏe",
+      "icon": "Heart"
+    },
+    {
+      "id": "society",
+      "label": "Xã hội",
+      "icon": "Users"
+    },
+    {
+      "id": "economy",
+      "label": "Kinh tế",
+      "icon": "TrendingUp"
+    },
+    {
+      "id": "culture",
+      "label": "Văn hóa",
+      "icon": "Palette"
+    }
   ],
-  "bandLevels": [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9]
+  "bandLevels": [
+    5,
+    5.5,
+    6,
+    6.5,
+    7,
+    7.5,
+    8,
+    8.5,
+    9
+  ]
 }

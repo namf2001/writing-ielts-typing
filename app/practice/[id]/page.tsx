@@ -6,7 +6,7 @@ import { PracticeSidebar } from "@/components/practice-sidebar"
 import { TypingArea } from "@/components/typing-area"
 import { VirtualKeyboard } from "@/components/virtual-keyboard"
 import { StatsBar } from "@/components/stats-bar"
-import { ScoreResult } from "@/components/score-result"
+import { ScoreResult, type ScoreData } from "@/components/score-result"
 import { useSound } from "@/hooks/use-sound"
 import {
   getExerciseById,
@@ -14,8 +14,9 @@ import {
   saveCurrentPractice,
   getCurrentPractice,
   clearCurrentPractice,
+  getSettings,
+  getAiHeaders,
   type Exercise,
-  type ScoreData,
 } from "@/lib/storage"
 
 export default function PracticePage() {
@@ -40,6 +41,10 @@ export default function PracticePage() {
   const [scoreResult, setScoreResult] = useState<ScoreData | null>(null)
   const [showScore, setShowScore] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [fontSize, setFontSize] = useState(16)
+
+  // Exam Countdown Timer
+  const [examRemainingSeconds, setExamRemainingSeconds] = useState<number | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const { playKeySound, playErrorSound, playSpaceSound } = useSound()
@@ -52,6 +57,24 @@ export default function PracticePage() {
       return
     }
     setExercise(ex)
+
+    // Load user settings
+    const settings = getSettings()
+    setShowKeyboard(settings.showKeyboard ?? true)
+    setSoundEnabled(settings.soundEnabled ?? true)
+    setFontSize(settings.fontSize ?? 16)
+
+    // Exam timer setup
+    const timerMinutes =
+      settings.examTimerMinutes > 0
+        ? settings.examTimerMinutes
+        : ex.taskType === "task1"
+        ? 20
+        : 40
+
+    if (settings.examTimerMinutes > 0) {
+      setExamRemainingSeconds(timerMinutes * 60)
+    }
 
     // Set text based on writing mode
     if (ex.writingMode === "ai-assisted" && ex.sampleEssay) {
@@ -71,6 +94,22 @@ export default function PracticePage() {
     setIsLoading(false)
   }, [exerciseId, router])
 
+  // Countdown timer effect
+  useEffect(() => {
+    if (!isPaused && examRemainingSeconds !== null && examRemainingSeconds > 0) {
+      const timer = setInterval(() => {
+        setExamRemainingSeconds((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [isPaused, examRemainingSeconds])
+
   // Auto-save practice
   useEffect(() => {
     if (!exercise || !typedText) return
@@ -82,7 +121,7 @@ export default function PracticePage() {
         currentIndex,
         startTime,
       })
-    }, 1000)
+    }, 1500)
 
     return () => clearTimeout(timeoutId)
   }, [exerciseId, typedText, currentIndex, startTime, exercise])
@@ -93,7 +132,7 @@ export default function PracticePage() {
 
     const timeElapsed = (Date.now() - startTime) / 1000 / 60
     const wordsTyped = currentIndex / 5
-    setWpm(Math.round(wordsTyped / timeElapsed))
+    setWpm(Math.round(wordsTyped / Math.max(timeElapsed, 0.05)))
 
     const totalChars = currentIndex
     const correctChars = totalChars - totalErrors
@@ -111,6 +150,9 @@ export default function PracticePage() {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (showScore || !exercise) return
+
+      // Ignore shortcut keys
+      if (e.metaKey || e.ctrlKey || e.altKey) return
 
       if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
         e.preventDefault()
@@ -198,7 +240,19 @@ export default function PracticePage() {
         setCurrentIndex((prev) => prev + 1)
       }
     },
-    [exercise, isPaused, currentIndex, text, typedText, startTime, showScore, soundEnabled, playKeySound, playErrorSound, playSpaceSound]
+    [
+      exercise,
+      isPaused,
+      currentIndex,
+      text,
+      typedText,
+      startTime,
+      showScore,
+      soundEnabled,
+      playKeySound,
+      playErrorSound,
+      playSpaceSound,
+    ]
   )
 
   useEffect(() => {
@@ -224,6 +278,16 @@ export default function PracticePage() {
     clearCurrentPractice()
   }, [])
 
+  const handleExit = useCallback(() => {
+    if (typedText.length > 20) {
+      if (window.confirm("Bạn có chắc muốn tạm dừng và quay về trang chủ? Tiến trình gõ hiện tại đã được tự động lưu lại.")) {
+        router.push("/")
+      }
+    } else {
+      router.push("/")
+    }
+  }, [typedText.length, router])
+
   const scoreEssay = async () => {
     if (!exercise || typedText.length < 50) return
 
@@ -231,7 +295,7 @@ export default function PracticePage() {
     try {
       const res = await fetch("/api/score-essay", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAiHeaders(),
         body: JSON.stringify({
           prompt: exercise.prompt,
           essay: typedText,
@@ -261,12 +325,13 @@ export default function PracticePage() {
         wpm,
         accuracy,
         wordCount: typedText.split(/\s+/).filter(Boolean).length,
+        timeSpentSeconds: startTime ? Math.round((Date.now() - startTime) / 1000) : 0,
       })
 
       clearCurrentPractice()
     } catch (error) {
       console.error("Failed to score:", error)
-      alert("Lỗi kết nối. Vui lòng thử lại.")
+      alert("Lỗi kết nối AI. Vui lòng kiểm tra lại cấu hình hoặc thử lại.")
     } finally {
       setIsScoring(false)
     }
@@ -283,12 +348,17 @@ export default function PracticePage() {
   if (!exercise) return null
 
   const progress = text.length > 0 ? (currentIndex / text.length) * 100 : 0
-  const isCompleted = exercise.writingMode === "ai-assisted"
-    ? currentIndex >= text.length && text.length > 0
-    : false
+  const isCompleted =
+    exercise.writingMode === "ai-assisted"
+      ? currentIndex >= text.length && text.length > 0
+      : false
 
   return (
-    <div ref={containerRef} tabIndex={0} className="flex-1 flex flex-col outline-none overflow-hidden">
+    <div
+      ref={containerRef}
+      tabIndex={0}
+      className="flex-1 flex flex-col outline-none overflow-hidden"
+    >
       {/* Main content area with sidebar */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <PracticeSidebar
@@ -301,6 +371,7 @@ export default function PracticePage() {
           isScoring={isScoring}
           onScore={scoreEssay}
           writingMode={exercise.writingMode}
+          onExit={handleExit}
         />
 
         {/* Content area - scrollable */}
@@ -315,8 +386,25 @@ export default function PracticePage() {
             isCompleted={isCompleted}
           />
 
-          {/* Typing area - scrollable */}
-          <div className="flex-1 overflow-auto">
+          {/* Optional Exam Timer Header */}
+          {examRemainingSeconds !== null && (
+            <div
+              className={`px-4 py-1.5 text-xs font-mono font-medium flex items-center justify-between border-b ${
+                examRemainingSeconds < 300
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 animate-pulse"
+                  : "bg-muted/30 text-muted-foreground border-border/50"
+              }`}
+            >
+              <span>⏱️ Thời gian thi còn lại:</span>
+              <span className="font-bold">
+                {Math.floor(examRemainingSeconds / 60)}:
+                {(examRemainingSeconds % 60).toString().padStart(2, "0")}
+              </span>
+            </div>
+          )}
+
+          {/* Typing area - notebook journal container */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <TypingArea
               text={text}
               typedText={typedText}
@@ -335,16 +423,20 @@ export default function PracticePage() {
         </div>
       </div>
 
-      {/* Keyboard - fixed at bottom (using flex, not position:fixed) */}
+      {/* Keyboard - fixed at bottom */}
       {showKeyboard && (
         <div className="shrink-0 border-t border-border">
           <VirtualKeyboard activeKey={activeKey} nextKey={text[currentIndex] || ""} />
         </div>
       )}
 
+      {/* Score and Detailed Annotation Result Modal */}
       {showScore && scoreResult && (
         <ScoreResult
           result={scoreResult}
+          essay={typedText}
+          prompt={exercise.prompt}
+          taskType={exercise.taskType}
           onClose={() => setShowScore(false)}
           onRetry={() => {
             setShowScore(false)

@@ -1,31 +1,40 @@
 "use client"
 
 import * as React from "react"
-import * as ProgressPrimitive from "@radix-ui/react-progress"
-
 import { cn } from "@/lib/utils"
 
-function Progress({
+export function Progress({
+  value = 0,
+  max = 100,
   className,
-  value,
+  indicatorClassName,
   ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  value?: number
+  max?: number
+  indicatorClassName?: string
+}) {
+  const percentage = Math.min(100, Math.max(0, ((value ?? 0) / (max || 100)) * 100))
+
   return (
-    <ProgressPrimitive.Root
-      data-slot="progress"
+    <div
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={max}
+      aria-valuenow={value}
       className={cn(
-        "bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
+        "relative h-2 w-full overflow-hidden rounded-full bg-secondary/80",
         className
       )}
       {...props}
     >
-      <ProgressPrimitive.Indicator
-        data-slot="progress-indicator"
-        className="bg-primary h-full w-full flex-1 transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      <div
+        className={cn(
+          "h-full w-full flex-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 transition-all duration-300 ease-out rounded-full",
+          indicatorClassName
+        )}
+        style={{ transform: `translateX(-${100 - percentage}%)` }}
       />
-    </ProgressPrimitive.Root>
+    </div>
   )
 }
-
-export { Progress }

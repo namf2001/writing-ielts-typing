@@ -1,56 +1,42 @@
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
+import { generateAiText } from "@/lib/ai"
 
 export async function POST(req: Request) {
   try {
-    const { prompt, taskType, bandTarget } = await req.json()
+    const { prompt, taskType = "task2" } = await req.json()
 
-    const minWords = taskType === "task1" ? 150 : 250
-    const maxWords = taskType === "task1" ? 200 : 350
+    if (!prompt) {
+      return Response.json({ error: "Thiếu đề bài writing" }, { status: 400 })
+    }
 
-    const systemPrompt = `Bạn là một chuyên gia viết luận IELTS. Hãy viết một bài luận mẫu bằng TIẾNG VIỆT cho đề bài sau.
+    const customApiKey = req.headers.get("x-groq-api-key") || undefined
+    const customModel = req.headers.get("x-groq-model") || undefined
 
-Đề bài: ${prompt}
+    const systemPrompt = `Bạn là một dịch giả và giáo viên luyện thi IELTS song ngữ Anh-Việt xuất sắc.
+Hãy viết một bài văn bằng TIẾNG VIỆT hoàn chỉnh dựa trên đề bài IELTS sau để học viên có thể luyện dịch từng câu sang tiếng Anh.
+
+Đề bài:
+"${prompt}"
 
 Yêu cầu:
-- Viết bài luận hoàn chỉnh bằng TIẾNG VIỆT
-- Độ dài tương đương ${minWords}-${maxWords} từ tiếng Anh (khoảng ${Math.round(minWords * 1.2)}-${Math.round(maxWords * 1.2)} từ tiếng Việt)
-- Sử dụng cấu trúc bài luận rõ ràng với các đoạn văn mạch lạc
-- Bao gồm các ví dụ và chi tiết hỗ trợ phù hợp
-- Viết tự nhiên, như một người viết IELTS giỏi sẽ viết
-- Đây là bài mẫu để người học dịch sang tiếng Anh, nên viết rõ ràng và dễ hiểu
+1. Viết bằng tiếng Việt tự nhiên, chuẩn mực, mạch lạc, chia đoạn rõ ràng (Mở bài, 2 đoạn Thân bài, Kết bài).
+2. Các câu văn nên có cấu trúc rõ ràng, logic, giàu ý tưởng lập luận để khi dịch sang tiếng Anh sẽ vận dụng được các cấu trúc câu phức, mệnh đề quan hệ, từ nối học thuật.
+3. Độ dài khoảng 250 - 320 từ tiếng Việt.
+4. Chỉ xuất ra nội dung bài văn tiếng Việt (các đoạn cách nhau 1 dòng trống). Không thêm tiêu đề, chú thích hay đếm từ.`
 
-Cấu trúc:
-- Mở bài: Giới thiệu vấn đề và nêu quan điểm
-- Thân bài: 2-3 đoạn văn phát triển ý
-- Kết bài: Tóm tắt và kết luận
-
-Viết bài luận ngay bây giờ (không tiêu đề, không đếm từ, chỉ nội dung bài luận):`.trim()
-
-    const { text } = await generateText({
-      model: google("gemini-2.0-flash"),
-      prompt: systemPrompt,
-      maxOutputTokens: 2000,
-      temperature: 0.7,
+    const vietnameseEssay = await generateAiText({
+      prompt: "Hãy viết bài văn tiếng Việt hoàn chỉnh ngay bây giờ:",
+      system: systemPrompt,
+      temperature: 0.6,
+      maxTokens: 1500,
+      apiKey: customApiKey,
+      model: customModel,
     })
 
-    return Response.json({
-      essay: text.trim(),
-      bandTarget,
-    })
-  } catch (error: unknown) {
-    console.error("Generate Vietnamese essay error:", error)
-    
-    const errorObj = error as { lastError?: { statusCode?: number } }
-    if (errorObj?.lastError?.statusCode === 429) {
-      return Response.json(
-        { error: "Đã vượt quá giới hạn API. Vui lòng đợi 1-2 phút rồi thử lại." },
-        { status: 429 }
-      )
-    }
-    
+    return Response.json({ essay: vietnameseEssay.trim() })
+  } catch (error: any) {
+    console.error("Generate vietnamese essay error:", error)
     return Response.json(
-      { error: "Không thể tạo bài mẫu. Vui lòng thử lại sau." },
+      { error: error?.message || "Không thể tạo bài văn tiếng Việt." },
       { status: 500 }
     )
   }

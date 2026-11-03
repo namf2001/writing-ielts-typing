@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -5,93 +6,112 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Clean minimalist color palette */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 260);
-  --primary: oklch(0.45 0.15 260);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0.01 260);
-  --secondary-foreground: oklch(0.25 0.02 260);
-  --muted: oklch(0.96 0.01 260);
-  --muted-foreground: oklch(0.45 0.02 260);
-  --accent: oklch(0.55 0.18 145);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.92 0.01 260);
-  --input: oklch(0.92 0.01 260);
-  --ring: oklch(0.45 0.15 260);
-  --radius: 0.625rem;
+  /* TID Neo-Brutalist Color Palette (Light Mode: Warm Cream / Paper & Crisp Ink) */
+  --background: #FAF7F0;
+  --foreground: #141414;
+  --card: #FFFFFF;
+  --card-foreground: #141414;
+  --popover: #FFFFFF;
+  --popover-foreground: #141414;
+  --primary: #141414;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FFF2D9;
+  --secondary-foreground: #141414;
+  --muted: #EFE9DB;
+  --muted-foreground: #5E584F;
+  --accent: #FFC93C;
+  --accent-foreground: #141414;
+  --destructive: #F0573A;
+  --destructive-foreground: #FFFFFF;
+  --border: #141414;
+  --input: #FFFFFF;
+  --ring: #FF9F0A;
+  --radius: 0.875rem;
+
+  /* Custom TID tokens */
+  --tid-ink: #141414;
+  --tid-cream: #FAF7F0;
+  --tid-parchment: #FFF8EC;
+  --tid-yellow: #FFC93C;
+  --tid-orange: #FF9F0A;
+  --tid-green: #7CC243;
+  --tid-emerald: #1FB57E;
+  --tid-coral: #F0573A;
+  --tid-sky: #7FB2FF;
+  --tid-navy: #182033;
+  --tid-purple: #9B5DE5;
+  --tid-olive: #6A8042;
 
   /* Chart colors */
-  --chart-1: oklch(0.45 0.15 260);
-  --chart-2: oklch(0.55 0.18 145);
-  --chart-3: oklch(0.65 0.15 45);
-  --chart-4: oklch(0.55 0.2 25);
-  --chart-5: oklch(0.5 0.15 200);
+  --chart-1: #FFC93C;
+  --chart-2: #7CC243;
+  --chart-3: #7FB2FF;
+  --chart-4: #F0573A;
+  --chart-5: #9B5DE5;
 
   /* Sidebar */
-  --sidebar: oklch(0.98 0 0);
-  --sidebar-foreground: oklch(0.15 0.02 260);
-  --sidebar-primary: oklch(0.45 0.15 260);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.96 0.01 260);
-  --sidebar-accent-foreground: oklch(0.25 0.02 260);
-  --sidebar-border: oklch(0.92 0.01 260);
-  --sidebar-ring: oklch(0.45 0.15 260);
+  --sidebar: #FAF7F0;
+  --sidebar-foreground: #141414;
+  --sidebar-primary: #141414;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FFF2D9;
+  --sidebar-accent-foreground: #141414;
+  --sidebar-border: #141414;
+  --sidebar-ring: #FF9F0A;
 
-  /* Custom writing app colors */
-  --success: oklch(0.55 0.18 145);
-  --warning: oklch(0.75 0.15 85);
-  --info: oklch(0.55 0.15 230);
+  /* Status */
+  --success: #7CC243;
+  --warning: #FF9F0A;
+  --info: #7FB2FF;
 
-  /* Virtual keyboard colors for light mode */
-  --keyboard-bg: oklch(0.95 0.01 260);
-  --keyboard-key: oklch(0.98 0 0);
+  --keyboard-bg: #EAE3D2;
+  --keyboard-key: #FFFFFF;
 }
 
 .dark {
-  --background: oklch(0.12 0.02 260);
-  --foreground: oklch(0.95 0.01 260);
-  --card: oklch(0.15 0.02 260);
-  --card-foreground: oklch(0.95 0.01 260);
-  --popover: oklch(0.15 0.02 260);
-  --popover-foreground: oklch(0.95 0.01 260);
-  --primary: oklch(0.7 0.15 260);
-  --primary-foreground: oklch(0.12 0.02 260);
-  --secondary: oklch(0.2 0.02 260);
-  --secondary-foreground: oklch(0.95 0.01 260);
-  --muted: oklch(0.2 0.02 260);
-  --muted-foreground: oklch(0.65 0.02 260);
-  --accent: oklch(0.6 0.18 145);
-  --accent-foreground: oklch(0.12 0.02 260);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0.02 260);
-  --input: oklch(0.2 0.02 260);
-  --ring: oklch(0.7 0.15 260);
+  /* TID Neo-Brutalist Dark Mode */
+  --background: #11141B;
+  --foreground: #F6F7F9;
+  --card: #181C26;
+  --card-foreground: #F6F7F9;
+  --popover: #181C26;
+  --popover-foreground: #F6F7F9;
+  --primary: #FFC93C;
+  --primary-foreground: #141414;
+  --secondary: #232938;
+  --secondary-foreground: #F6F7F9;
+  --muted: #242938;
+  --muted-foreground: #9AA3B4;
+  --accent: #7CC243;
+  --accent-foreground: #141414;
+  --destructive: #F0573A;
+  --destructive-foreground: #FFFFFF;
+  --border: #32394C;
+  --input: #181C26;
+  --ring: #FFC93C;
 
-  --sidebar: oklch(0.15 0.02 260);
-  --sidebar-foreground: oklch(0.95 0.01 260);
-  --sidebar-primary: oklch(0.7 0.15 260);
-  --sidebar-primary-foreground: oklch(0.12 0.02 260);
-  --sidebar-accent: oklch(0.2 0.02 260);
-  --sidebar-accent-foreground: oklch(0.95 0.01 260);
-  --sidebar-border: oklch(0.25 0.02 260);
-  --sidebar-ring: oklch(0.7 0.15 260);
+  --tid-ink: #32394C;
+  --tid-cream: #11141B;
+  --tid-parchment: #181C26;
 
-  /* Virtual keyboard colors for dark mode */
-  --keyboard-bg: oklch(0.15 0.02 260);
-  --keyboard-key: oklch(0.22 0.02 260);
+  --sidebar: #11141B;
+  --sidebar-foreground: #F6F7F9;
+  --sidebar-primary: #FFC93C;
+  --sidebar-primary-foreground: #141414;
+  --sidebar-accent: #232938;
+  --sidebar-accent-foreground: #F6F7F9;
+  --sidebar-border: #32394C;
+  --sidebar-ring: #FFC93C;
+
+  --keyboard-bg: #1B202D;
+  --keyboard-key: #252C3D;
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: var(--font-merriweather), ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-handwriting: var(--font-caveat), "Comic Sans MS", cursive, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -116,10 +136,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -135,17 +155,117 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
   }
 }
 
+/* TID Neo-Brutalist & Retro-Editorial Signature Styles */
 @layer utilities {
+  .tid-grid-bg {
+    background-image: 
+      linear-gradient(rgba(20, 20, 20, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 20, 20, 0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .dark .tid-grid-bg {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* TID Bento Card Block */
+  .h24-block, .tid-block {
+    border: 3px solid #141414;
+    box-shadow: 5px 5px 0 #141414;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .dark .h24-block, .dark .tid-block {
+    border-color: #384259;
+    box-shadow: 5px 5px 0 #0A0D14;
+  }
+
+  .h24-block:hover, .tid-block:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 8px 8px 0 #141414;
+  }
+
+  .dark .h24-block:hover, .dark .tid-block:hover {
+    box-shadow: 8px 8px 0 #FFC93C;
+    border-color: #FFC93C;
+  }
+
+  .h24-block:active, .tid-block:active {
+    transition-duration: 80ms;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #141414;
+  }
+
+  .dark .h24-block:active, .dark .tid-block:active {
+    box-shadow: 2px 2px 0 #0A0D14;
+  }
+
+  /* TID Compound CTA Button */
+  .h24-cta {
+    display: inline-flex;
+    align-items: stretch;
+    border: 2px solid #141414;
+    box-shadow: 4px 4px 0 var(--cta-shadow, #141414);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.15s;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .dark .h24-cta {
+    border-color: #434D66;
+    box-shadow: 4px 4px 0 #000000;
+  }
+
+  .h24-cta:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--cta-shadow, #141414);
+  }
+
+  .dark .h24-cta:hover {
+    box-shadow: 6px 6px 0 #FFC93C;
+  }
+
+  .h24-cta:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--cta-shadow, #141414);
+  }
+
+  .h24-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Tactile Pill */
+  .tid-pill {
+    border: 2px solid #141414;
+    box-shadow: 2px 2px 0 #141414;
+    border-radius: 9999px;
+    font-weight: 700;
+  }
+
+  .dark .tid-pill {
+    border-color: #434D66;
+    box-shadow: 2px 2px 0 #000000;
+  }
+
+  /* Focus ring */
+  .tid-focus:focus-visible {
+    outline: 3px solid #FFD43B;
+    outline-offset: 2px;
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: var(--muted) transparent;
+    scrollbar-color: var(--muted-foreground) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -157,8 +277,123 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: var(--muted);
     border-radius: 3px;
+    border: 1px solid #141414;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
+
+  /* Notebook Fonts */
+  .font-typing-sans {
+    font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  }
+  .font-typing-serif {
+    font-family: var(--font-merriweather), "Merriweather", ui-serif, Georgia, Cambria, "Times New Roman", serif !important;
+  }
+  .font-typing-mono {
+    font-family: var(--font-mono-jb), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace !important;
+  }
+  .font-typing-handwriting {
+    font-family: var(--font-caveat), "Caveat", "Comic Sans MS", "Bradley Hand", cursive, sans-serif !important;
+  }
+
+  /* Notebook Paper Background Styles */
+  .notebook-paper-ruled {
+    background-color: #FFFDF9;
+    background-image: 
+      /* Vertical pink/coral margin line */
+      linear-gradient(90deg, transparent 48px, rgba(240, 87, 58, 0.45) 48px, rgba(240, 87, 58, 0.45) 50px, transparent 50px),
+      /* Horizontal ruled lines */
+      repeating-linear-gradient(to bottom, transparent, transparent calc(var(--paper-line-height, 42px) - 1.5px), rgba(30, 41, 59, 0.12) calc(var(--paper-line-height, 42px) - 1.5px), rgba(30, 41, 59, 0.12) var(--paper-line-height, 42px));
+    background-size: 100% 100%, 100% var(--paper-line-height, 42px);
+  }
+
+  .dark .notebook-paper-ruled {
+    background-color: #151821;
+    background-image: 
+      linear-gradient(90deg, transparent 48px, rgba(240, 87, 58, 0.35) 48px, rgba(240, 87, 58, 0.35) 50px, transparent 50px),
+      repeating-linear-gradient(to bottom, transparent, transparent calc(var(--paper-line-height, 42px) - 1px), rgba(255, 255, 255, 0.08) calc(var(--paper-line-height, 42px) - 1px), rgba(255, 255, 255, 0.08) var(--paper-line-height, 42px));
+    background-size: 100% 100%, 100% var(--paper-line-height, 42px);
+  }
+
+  .notebook-paper-grid {
+    background-color: #FFFDF9;
+    background-image: 
+      linear-gradient(rgba(20, 20, 20, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 20, 20, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .dark .notebook-paper-grid {
+    background-color: #151821;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .notebook-paper-dot {
+    background-color: #FFFDF9;
+    background-image: radial-gradient(rgba(20, 20, 20, 0.22) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+
+  .dark .notebook-paper-dot {
+    background-color: #151821;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+
+  .notebook-paper-blank {
+    background-color: #FFFDF9;
+  }
+
+  .dark .notebook-paper-blank {
+    background-color: #151821;
+  }
+
+  /* Text & Ink Micro-Animations */
+  @keyframes ink-pop {
+    0% {
+      transform: scale(1.24) translateY(-1px);
+      filter: drop-shadow(0 2px 4px rgba(255, 159, 10, 0.4));
+    }
+    60% {
+      transform: scale(0.96) translateY(0);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+      filter: none;
+    }
+  }
+
+  .animate-ink-pop {
+    display: inline-block;
+    animation: ink-pop 0.12s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  }
+
+  @keyframes error-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-3px); }
+    40% { transform: translateX(3px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+  }
+
+  .animate-error-shake {
+    display: inline-block;
+    animation: error-shake 0.16s ease-in-out forwards;
+  }
+
+  @keyframes cursor-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    50% {
+      opacity: 0.15;
+      transform: scaleY(0.92);
+    }
+  }
+
+  .animate-cursor-pulse {
+    animation: cursor-pulse 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

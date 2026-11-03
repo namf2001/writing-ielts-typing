@@ -1,71 +1,60 @@
-import { generateObject } from "ai"
-import { google } from "@ai-sdk/google"
-import { z } from "zod"
+import { generateAiJson } from "@/lib/ai"
 
-// Schema không yêu cầu startIndex và endIndex từ AI
-const annotationSchema = z.object({
-  annotations: z.array(z.object({
-    text: z.string().describe("Đoạn văn bản chính xác từ bài viết cần đánh dấu"),
-    type: z.enum(["excellent", "good", "warning", "error", "spelling", "grammar", "vocabulary", "coherence"]),
-    category: z.enum(["taskResponse", "coherenceCohesion", "lexicalResource", "grammaticalRange", "spelling", "general"]),
-    suggestion: z.string(),
-    correctedText: z.string().optional(),
-    reason: z.string(),
-    impact: z.string(),
-    examples: z.array(z.string()).optional(),
-  }))
-})
-
-// Hàm tìm vị trí chính xác của đoạn text trong bài viết
-function findTextPositions(essay: string, annotations: Array<{
+interface AnnotationRaw {
   text: string
-  type: string
-  category: string
+  type: "excellent" | "good" | "warning" | "error" | "spelling" | "grammar" | "vocabulary" | "coherence"
+  category: "taskResponse" | "coherenceCohesion" | "lexicalResource" | "grammaticalRange" | "spelling" | "general"
   suggestion: string
   correctedText?: string
   reason: string
   impact: string
   examples?: string[]
-}>) {
-  const result: Array<{
-    startIndex: number
-    endIndex: number
-    text: string
-    type: string
-    category: string
-    suggestion: string
-    correctedText?: string
-    reason: string
-    impact: string
-    examples?: string[]
-  }> = []
+}
 
+interface AnnotateResponseRaw {
+  annotations: AnnotationRaw[]
+}
+
+function findTextPositions(
+  essay: string,
+  annotations: AnnotationRaw[]
+) {
+  const result: Array<AnnotationRaw & { startIndex: number; endIndex: number }> = []
   const usedRanges: Array<{ start: number; end: number }> = []
 
   for (const annotation of annotations) {
-    const searchText = annotation.text.trim()
+    const searchText = annotation.text?.trim()
     if (!searchText) continue
 
-    // Tìm vị trí của đoạn text trong bài viết
+    // Exact search first
     let startIndex = essay.indexOf(searchText)
-    
-    // Nếu không tìm thấy chính xác, thử tìm với lowercase
+
+    // Case-insensitive search fallback
     if (startIndex === -1) {
-      const lowerEssay = essay.toLowerCase()
-      const lowerSearch = searchText.toLowerCase()
-      startIndex = lowerEssay.indexOf(lowerSearch)
+      startIndex = essay.toLowerCase().indexOf(searchText.toLowerCase())
     }
 
-    // Nếu vẫn không tìm thấy, bỏ qua annotation này
+    // Normalized whitespace search fallback
+    if (startIndex === -1) {
+      const cleanSearch = searchText.replace(/\s+/g, " ")
+      const cleanEssay = essay.replace(/\s+/g, " ")
+      const matchIdx = cleanEssay.indexOf(cleanSearch)
+      if (matchIdx !== -1) {
+        // Approximate to essay length
+        startIndex = Math.min(matchIdx, essay.length - 1)
+      }
+    }
+
     if (startIndex === -1) continue
 
-    const endIndex = startIndex + searchText.length
+    const endIndex = Math.min(startIndex + searchText.length, essay.length)
 
-    // Kiểm tra xem vùng này đã được sử dụng chưa (tránh trùng lặp)
-    const isOverlapping = usedRanges.some(range => 
-      (startIndex >= range.start && startIndex < range.end) ||
-      (endIndex > range.start && endIndex <= range.end) ||
-      (startIndex <= range.start && endIndex >= range.end)
+    // Check overlap
+    const isOverlapping = usedRanges.some(
+      (range) =>
+        (startIndex >= range.start && startIndex < range.end) ||
+        (endIndex > range.start && endIndex <= range.end) ||
+        (startIndex <= range.start && endIndex >= range.end)
     )
 
     if (isOverlapping) continue
@@ -73,97 +62,79 @@ function findTextPositions(essay: string, annotations: Array<{
     usedRanges.push({ start: startIndex, end: endIndex })
 
     result.push({
+      ...annotation,
       startIndex,
       endIndex,
-      text: essay.substring(startIndex, endIndex), // Lấy text gốc từ bài viết
-      type: annotation.type,
-      category: annotation.category,
-      suggestion: annotation.suggestion,
-      correctedText: annotation.correctedText,
-      reason: annotation.reason,
-      impact: annotation.impact,
-      examples: annotation.examples,
+      text: essay.substring(startIndex, endIndex),
     })
   }
 
-  // Sắp xếp theo vị trí xuất hiện
-  result.sort((a, b) => a.startIndex - b.startIndex)
-
-  return result
+  return result.sort((a, b) => a.startIndex - b.startIndex)
 }
 
 export async function POST(req: Request) {
   try {
     const { prompt, essay, taskType } = await req.json()
 
-    const analysisPrompt = `Bạn là giám khảo IELTS Writing có kinh nghiệm. Hãy phân tích chi tiết bài viết sau và đánh dấu các đoạn cụ thể.
+    if (!essay || typeof essay !== "string" || essay.trim().length < 15) {
+      return Response.json({ annotations: [] })
+    }
 
-Đề bài: ${prompt}
+    const customApiKey = req.headers.get("x-groq-api-key") || undefined
+    const customModel = req.headers.get("x-groq-model") || undefined
+
+    const analysisPrompt = `Bạn là giám khảo IELTS Writing nhiều năm kinh nghiệm. Hãy phân tích chi tiết bài viết dưới đây và trích xuất các điểm cần lưu ý (lỗi ngữ pháp, lỗi chính tả, từ vựng học thuật xuất sắc, hoặc gợi ý diễn đạt tự nhiên hơn).
+
+Đề bài:
+"""
+${prompt || "IELTS Writing Task"}
+"""
 
 Bài viết:
-"${essay}"
+"""
+${essay}
+"""
 
-QUAN TRỌNG: Hãy copy CHÍNH XÁC các đoạn văn bản từ bài viết trên (bao gồm cả lỗi chính tả nếu có). KHÔNG được thay đổi hay sửa text.
+YÊU CẦU QUAN TRỌNG:
+1. Trường 'text' PHẢI là đoạn trích nguyên văn CHÍNH XÁC từ bài viết (copy từng chữ, bao gồm cả lỗi sai nếu có).
+2. Với lỗi chính tả (spelling), chỉ trích đúng từ bị sai (ví dụ "conutries"), không trích cả câu dài.
+3. Cung cấp gợi ý (suggestion) và lý do (reason) bằng tiếng Việt rõ ràng, dễ hiểu.
+4. Trường 'type' chọn từ: "excellent" | "good" | "warning" | "error" | "spelling" | "grammar" | "vocabulary" | "coherence"
+5. Trường 'category' chọn từ: "taskResponse" | "coherenceCohesion" | "lexicalResource" | "grammaticalRange" | "spelling" | "general"
 
-Hãy phân tích và tạo annotations cho bài viết:
+Trả về JSON theo format sau:
+{
+  "annotations": [
+    {
+      "text": "cụm từ chính xác trích từ bài",
+      "type": "grammar",
+      "category": "grammaticalRange",
+      "suggestion": "Nên đổi thành...",
+      "correctedText": "cách viết chuẩn",
+      "reason": "Lý do vì sao sai hoặc chưa tối ưu",
+      "impact": "Giúp tăng 0.5 band GRA nếu sửa",
+      "examples": ["Ví dụ tương tự 1", "Ví dụ 2"]
+    }
+  ]
+}`
 
-**Loại đánh giá (type):**
-- "excellent": Đoạn văn xuất sắc, từ vựng cao cấp, cấu trúc phức tạp chính xác
-- "good": Đoạn văn tốt, ý tưởng hay hoặc diễn đạt tốt
-- "warning": Cần cải thiện, có thể dùng từ vựng/cấu trúc tốt hơn
-- "error": Lỗi nghiêm trọng về ngữ pháp, logic
-- "spelling": Lỗi chính tả (ví dụ: "taht" thay vì "that", "financail" thay vì "financial")
-- "grammar": Lỗi ngữ pháp
-- "vocabulary": Từ vựng không phù hợp
-- "coherence": Vấn đề liên kết ý
-
-**Danh mục (category):** taskResponse, coherenceCohesion, lexicalResource, grammaticalRange, spelling, general
-
-Cho mỗi annotation:
-1. **text**: Copy CHÍNH XÁC đoạn văn bản từ bài viết (giữ nguyên lỗi chính tả nếu có)
-2. **type**: Loại đánh giá
-3. **category**: Danh mục
-4. **suggestion**: Gợi ý cải thiện bằng tiếng Việt (2-3 câu)
-5. **correctedText**: (Nếu có lỗi) Cách sửa đúng
-6. **reason**: Lý do đánh giá (1-2 câu)
-7. **impact**: Ảnh hưởng đến band score
-8. **examples**: (Optional) 1-2 ví dụ cải thiện
-
-**QUY TẮC ĐẶC BIỆT CHO LỖI CHÍNH TẢ (spelling):**
-- CHỈ đánh dấu ĐÚNG TỪ SAI, KHÔNG đánh dấu cả câu hay cả cụm từ
-- Ví dụ: Nếu câu là "In many conutries today" và "conutries" sai chính tả, thì text chỉ là "conutries", KHÔNG PHẢI "In many conutries today"
-- Mỗi từ sai chính tả = 1 annotation riêng biệt
-
-Lưu ý:
-- Mỗi đoạn text chỉ được đánh dấu MỘT LẦN
-- Các đoạn KHÔNG ĐƯỢC CHỒNG CHÉO lên nhau
-- Ưu tiên đánh dấu: lỗi chính tả > lỗi ngữ pháp > điểm tốt > cảnh báo
-- Với bài viết ngắn, chỉ cần 3-5 annotations là đủ`
-
-    const { object } = await generateObject({
-      model: google("gemini-2.0-flash"),
-      schema: annotationSchema,
+    const rawResponse = await generateAiJson<AnnotateResponseRaw>({
       prompt: analysisPrompt,
+      system:
+        "Bạn là chuyên gia phân tích bài thi IELTS Writing. Trả về đúng JSON danh sách annotations.",
       temperature: 0.2,
+      apiKey: customApiKey,
+      model: customModel,
+      defaultFallback: { annotations: [] },
     })
 
-    // Tìm vị trí chính xác và loại bỏ trùng lặp
-    const processedAnnotations = findTextPositions(essay, object.annotations)
+    const processedAnnotations = findTextPositions(essay, rawResponse.annotations || [])
 
     return Response.json({ annotations: processedAnnotations })
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Annotate essay error:", error)
-    
-    const errorObj = error as { lastError?: { statusCode?: number } }
-    if (errorObj?.lastError?.statusCode === 429) {
-      return Response.json(
-        { error: "Đã vượt quá giới hạn API. Vui lòng đợi 1-2 phút rồi thử lại." },
-        { status: 429 }
-      )
-    }
-    
     return Response.json(
-      { error: "Không thể phân tích bài viết. Vui lòng thử lại sau." },
+      { error: error?.message || "Không thể phân tích bài viết lúc này." },
       { status: 500 }
     )
   }

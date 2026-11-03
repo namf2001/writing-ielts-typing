@@ -1,16 +1,44 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Sparkles, PenLine, ArrowRight, GraduationCap, Laptop, Leaf, Heart, Users, TrendingUp, Palette, Filter, Plus, BookOpen, Languages, Target, Clock, Award, Zap, ChevronRight, Star } from "lucide-react"
+import { useState, useMemo, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import {
+  Sparkles,
+  PenLine,
+  ArrowRight,
+  GraduationCap,
+  Laptop,
+  Leaf,
+  Heart,
+  Users,
+  TrendingUp,
+  Palette,
+  BookOpen,
+  Languages,
+  Clock,
+  Zap,
+  Star,
+  FileText,
+  Filter,
+  CheckCircle2,
+  Award,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { createExercise, getSubmissions, type WritingMode, type TaskType } from "@/lib/storage"
+import { TidArrowCta } from "@/components/ui/tid-arrow-cta"
+import { GsapAnimatedHud } from "@/components/gsap-animated-hud"
+import {
+  createExercise,
+  getSubmissions,
+  getAiHeaders,
+  type WritingMode,
+  type TaskType,
+} from "@/lib/storage"
 import exercisesData from "@/data/exercises.json"
 
 const TOPIC_ICONS: Record<string, React.ReactNode> = {
@@ -23,25 +51,27 @@ const TOPIC_ICONS: Record<string, React.ReactNode> = {
   culture: <Palette className="h-4 w-4" />,
 }
 
-const TOPIC_COLORS: Record<string, string> = {
-  education: "from-blue-500 to-indigo-500",
-  technology: "from-violet-500 to-purple-500",
-  environment: "from-green-500 to-emerald-500",
-  health: "from-rose-500 to-pink-500",
-  society: "from-orange-500 to-amber-500",
-  economy: "from-cyan-500 to-teal-500",
-  culture: "from-fuchsia-500 to-pink-500",
-}
-
 const TOPICS = exercisesData.topics
 
-type ViewMode = "samples" | "create"
+type ViewMode = "samples" | "translation" | "create"
 
-export default function HomePage() {
+function HomeContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [viewMode, setViewMode] = useState<ViewMode>("samples")
-  const [stats, setStats] = useState({ totalPracticed: 0, totalWords: 0 })
-  
+  const [stats, setStats] = useState({ totalPracticed: 0, totalWords: 0, avgWpm: 0, avgAccuracy: 100 })
+
+  // Synchronize with URL search query "?tab=translation" or "?tab=create"
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab === "translation") {
+      setViewMode("translation")
+    } else if (tab === "create") {
+      setViewMode("create")
+    }
+  }, [searchParams])
+
   // Filter states
   const [filterTopic, setFilterTopic] = useState<string>("all")
   const [filterBand, setFilterBand] = useState<string>("all")
@@ -51,7 +81,7 @@ export default function HomePage() {
   const [writingMode, setWritingMode] = useState<WritingMode>("ai-assisted")
   const [taskType, setTaskType] = useState<TaskType>("task2")
   const [topic, setTopic] = useState("random")
-  const [bandTarget, setBandTarget] = useState(7)
+  const [bandTarget, setBandTarget] = useState(7.5)
   const [prompt, setPrompt] = useState("")
   const [sampleEssay, setSampleEssay] = useState<string | null>(null)
   const [vietnameseEssay, setVietnameseEssay] = useState<string | null>(null)
@@ -63,12 +93,23 @@ export default function HomePage() {
   useEffect(() => {
     const submissions = getSubmissions()
     const words = submissions.reduce((acc, s) => acc + (s.wordCount || 0), 0)
-    setStats({ totalPracticed: submissions.length, totalWords: words })
+    const validWpm = submissions.filter((s) => s.wpm && s.wpm > 0)
+    const avgWpm = validWpm.length > 0 ? Math.round(validWpm.reduce((acc, s) => acc + s.wpm!, 0) / validWpm.length) : 0
+    const validAcc = submissions.filter((s) => s.accuracy && s.accuracy > 0)
+    const avgAcc = validAcc.length > 0 ? Math.round(validAcc.reduce((acc, s) => acc + s.accuracy!, 0) / validAcc.length) : 100
+
+    setStats({
+      totalPracticed: submissions.length,
+      totalWords: words,
+      avgWpm,
+      avgAccuracy: avgAcc,
+    })
   }, [])
 
-  // Filter exercises
-  const filteredExercises = useMemo(() => {
+  // Filter English typing samples
+  const typingExercises = useMemo(() => {
     return exercisesData.exercises.filter((ex) => {
+      if (ex.writingMode === "translation") return false
       if (filterTopic !== "all" && ex.topic !== filterTopic) return false
       if (filterBand !== "all" && ex.bandTarget !== parseFloat(filterBand)) return false
       if (filterTaskType !== "all" && ex.taskType !== filterTaskType) return false
@@ -76,28 +117,45 @@ export default function HomePage() {
     })
   }, [filterTopic, filterBand, filterTaskType])
 
-  // Group exercises by band
-  const exercisesByBand = useMemo(() => {
-    const grouped: Record<number, typeof filteredExercises> = {}
-    filteredExercises.forEach((ex) => {
+  // Group typing exercises by band
+  const typingByBand = useMemo(() => {
+    const grouped: Record<number, typeof typingExercises> = {}
+    typingExercises.forEach((ex) => {
       if (!grouped[ex.bandTarget]) grouped[ex.bandTarget] = []
       grouped[ex.bandTarget].push(ex)
     })
     return Object.entries(grouped)
       .sort(([a], [b]) => parseFloat(b) - parseFloat(a))
       .map(([band, exercises]) => ({ band: parseFloat(band), exercises }))
-  }, [filteredExercises])
+  }, [typingExercises])
 
-  const handleSelectSample = (sample: typeof exercisesData.exercises[0]) => {
+  // Filter Vietnamese -> English translation exercises
+  const translationExercises = useMemo(() => {
+    return exercisesData.exercises.filter((ex) => {
+      if (ex.writingMode !== "translation") return false
+      if (filterTopic !== "all" && ex.topic !== filterTopic) return false
+      if (filterBand !== "all" && ex.bandTarget !== parseFloat(filterBand)) return false
+      if (filterTaskType !== "all" && ex.taskType !== filterTaskType) return false
+      return true
+    })
+  }, [filterTopic, filterBand, filterTaskType])
+
+  const handleSelectSample = (sample: typeof exercisesData.exercises[0], forceMode?: WritingMode) => {
+    const mode = forceMode || (sample.writingMode as WritingMode) || "ai-assisted"
     const exercise = createExercise({
       prompt: sample.prompt,
       sampleEssay: sample.sampleEssay,
       taskType: sample.taskType as TaskType,
       topic: sample.topic,
       bandTarget: sample.bandTarget,
-      writingMode: sample.writingMode as WritingMode,
+      writingMode: mode,
     })
-    router.push(`/practice/${exercise.id}`)
+
+    if (mode === "translation") {
+      router.push(`/practice/translation/${exercise.id}`)
+    } else {
+      router.push(`/practice/${exercise.id}`)
+    }
   }
 
   const generatePrompt = async () => {
@@ -105,7 +163,7 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/generate-prompt", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAiHeaders(),
         body: JSON.stringify({ topic: topic === "random" ? null : topic, taskType, bandTarget }),
       })
       const data = await res.json()
@@ -115,9 +173,10 @@ export default function HomePage() {
       }
       setPrompt(data.prompt)
       setSampleEssay(null)
+      setVietnameseEssay(null)
     } catch (error) {
       console.error("Failed to generate prompt:", error)
-      alert("Lỗi kết nối. Vui lòng thử lại.")
+      alert("Lỗi kết nối AI. Vui lòng thử lại.")
     } finally {
       setIsGeneratingPrompt(false)
     }
@@ -129,8 +188,8 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/generate-essay", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, taskType, bandTarget }),
+        headers: getAiHeaders(),
+        body: JSON.stringify({ prompt, bandTarget }),
       })
       const data = await res.json()
       if (data.error) {
@@ -139,8 +198,8 @@ export default function HomePage() {
       }
       setSampleEssay(data.essay)
     } catch (error) {
-      console.error("Failed to generate essay:", error)
-      alert("Lỗi kết nối. Vui lòng thử lại.")
+      console.error("Failed to generate sample essay:", error)
+      alert("Lỗi kết nối AI. Vui lòng thử lại.")
     } finally {
       setIsGeneratingEssay(false)
     }
@@ -152,46 +211,35 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/generate-vietnamese-essay", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, taskType, bandTarget }),
+        headers: getAiHeaders(),
+        body: JSON.stringify({ prompt, bandTarget }),
       })
       const data = await res.json()
       if (data.error) {
         alert(data.error)
         return
       }
-      setVietnameseEssay(data.essay)
+      setVietnameseEssay(data.vietnameseEssay)
     } catch (error) {
       console.error("Failed to generate Vietnamese essay:", error)
-      alert("Lỗi kết nối. Vui lòng thử lại.")
+      alert("Lỗi kết nối AI. Vui lòng thử lại.")
     } finally {
       setIsGeneratingVietnamese(false)
     }
   }
 
   const startPractice = () => {
-    if (!prompt) {
-      alert("Vui lòng tạo đề bài trước")
-      return
-    }
-    if (writingMode === "ai-assisted" && !sampleEssay) {
-      alert("Vui lòng tạo bài mẫu trước khi luyện tập")
-      return
-    }
-    if (writingMode === "translation" && !vietnameseEssay) {
-      alert("Vui lòng tạo bài văn tiếng Việt trước khi luyện tập")
-      return
-    }
-    
+    if (!prompt) return
+    const essayContent = writingMode === "translation" ? vietnameseEssay : sampleEssay
     const exercise = createExercise({
       prompt,
-      sampleEssay: writingMode === "translation" ? vietnameseEssay : sampleEssay,
+      sampleEssay: essayContent,
       taskType,
-      topic,
+      topic: topic === "random" ? "general" : topic,
       bandTarget,
       writingMode,
     })
-    
+
     if (writingMode === "translation") {
       router.push(`/practice/translation/${exercise.id}`)
     } else {
@@ -199,507 +247,666 @@ export default function HomePage() {
     }
   }
 
-  const getTopicLabel = (topicId: string) => {
-    return TOPICS.find((t) => t.id === topicId)?.label || topicId
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden border-b bg-gradient-to-br from-primary/5 via-primary/10 to-violet-500/10">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-violet-500/20 to-transparent rounded-full blur-3xl" />
-        
-        <div className="container mx-auto px-4 py-12 relative">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              Luyện tập IELTS Writing hiệu quả với AI
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
-              Nâng cao kỹ năng viết
-              <span className="block mt-2 bg-gradient-to-r from-primary to-violet-500 bg-clip-text text-transparent">
-                IELTS Writing
-              </span>
-            </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Luyện tập viết theo bài mẫu, tự viết với AI chấm điểm, hoặc dịch Việt-Anh để nâng cao từ vựng và ngữ pháp
-            </p>
+    <div className="flex-1 w-full flex flex-col pb-20 bg-[#FAF7F0] dark:bg-[#11141B]">
+      {/* 1. TID Hero Banner Section */}
+      <section className="relative overflow-hidden border-b-[3px] border-[#141414] dark:border-[#384259] bg-[#FAF7F0] dark:bg-[#11141B] tid-grid-bg py-12 sm:py-16 px-4 sm:px-6">
+        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-5">
+          {/* Top Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border-2 border-[#141414] bg-[#FFC93C] text-[#141414] shadow-[3px_3px_0_#141414] font-mono text-xs font-black uppercase tracking-wider dark:border-[#384259] dark:shadow-[3px_3px_0_#0A0D14]">
+            <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>NỀN TẢNG LUYỆN VIẾT & GÕ PHÍM IELTS CHUẨN TƯ DUY 8.5+</span>
+          </div>
 
-            {/* Quick Stats */}
-            <div className="flex flex-wrap justify-center gap-6 pt-4">
-              <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-background/80 backdrop-blur border shadow-sm">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <Target className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="text-left">
-                  <p className="text-2xl font-bold">{exercisesData.exercises.length}</p>
-                  <p className="text-xs text-muted-foreground">Bài mẫu có sẵn</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-background/80 backdrop-blur border shadow-sm">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <Award className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="text-left">
-                  <p className="text-2xl font-bold">{stats.totalPracticed}</p>
-                  <p className="text-xs text-muted-foreground">Bài đã luyện</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-background/80 backdrop-blur border shadow-sm">
-                <div className="p-2 rounded-lg bg-violet-500/10">
-                  <Zap className="h-5 w-5 text-violet-600" />
-                </div>
-                <div className="text-left">
-                  <p className="text-2xl font-bold">{stats.totalWords.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Từ đã viết</p>
-                </div>
-              </div>
-            </div>
+          {/* Headline in TID Playful Editorial Style */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-[#141414] dark:text-white max-w-4xl mx-auto leading-[1.15]">
+            Luyện thi IELTS<span className="text-[#FF9F0A]">*</span>{" "}
+            <span className="inline-block relative">
+              <span className="relative z-10 underline decoration-[#FFC93C] decoration-[6px] underline-offset-8">
+                Writing & Typing
+              </span>
+            </span>
+          </h1>
+
+          <p className="text-sm sm:text-base md:text-lg text-[#141414]/80 dark:text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
+            Phương pháp song hành thế hệ mới: Nạp phản xạ từ vựng học thuật qua{" "}
+            <span className="text-[#141414] dark:text-white underline decoration-[#7CC243] decoration-2">Luyện Gõ</span>,
+            rèn tư duy tự nhiên qua{" "}
+            <span className="text-[#141414] dark:text-white underline decoration-[#7FB2FF] decoration-2">Luyện Dịch Việt - Anh</span>,
+            và chấm điểm 4 tiêu chí IELTS miễn phí cùng AI.
+          </p>
+
+          {/* TID GSAP Animated HUD Metrics */}
+          <div className="pt-4 max-w-4xl mx-auto">
+            <GsapAnimatedHud
+              wpm={stats.avgWpm}
+              accuracy={stats.avgAccuracy}
+              streak={stats.totalPracticed}
+              totalWords={stats.totalWords}
+            />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Mode Toggle */}
-          <div className="flex justify-center">
-            <div className="inline-flex gap-2 p-1.5 bg-muted rounded-xl">
-              <Button
-                variant={viewMode === "samples" ? "default" : "ghost"}
-                size="lg"
-                onClick={() => setViewMode("samples")}
-                className={`gap-2 rounded-lg transition-all ${viewMode === "samples" ? "shadow-md" : ""}`}
-              >
-                <BookOpen className="h-5 w-5" />
-                Bài mẫu có sẵn
-              </Button>
-              <Button
-                variant={viewMode === "create" ? "default" : "ghost"}
-                size="lg"
-                onClick={() => setViewMode("create")}
-                className={`gap-2 rounded-lg transition-all ${viewMode === "create" ? "shadow-md" : ""}`}
-              >
-                <Plus className="h-5 w-5" />
-                Tạo bài tập mới
-              </Button>
+      {/* 2. TID Signature Bento Grid (01, 02, 03, 04, 05) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-8 w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#FF9F0A] border-2 border-[#141414]" />
+            <h2 className="text-xl sm:text-2xl font-black text-[#141414] dark:text-white uppercase tracking-tight">
+              CÁC PHÂN HỆ HỌC TẬP TẠI TID<span className="text-[#FF9F0A]">*</span>
+            </h2>
+          </div>
+          <span className="text-xs font-mono font-bold text-muted-foreground uppercase">
+            05 KHÔNG GIAN
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {/* BENTO CARD 01: LUYỆN GÕ BÀI MẪU */}
+          <div
+            onClick={() => setViewMode("samples")}
+            className="h24-block relative flex flex-col justify-between p-6 rounded-2xl cursor-pointer bg-[#FFF8EC] text-[#141414] min-h-[260px] dark:bg-[#181C26] dark:text-white"
+          >
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest uppercase">
+                <span className="bg-[#141414] px-2 py-0.5 text-white rounded">01</span>
+                LỘ TRÌNH
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight leading-none">
+                Luyện Gõ Bài Mẫu<span className="text-[#FF9F0A]">*</span>
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                Gõ phím theo nhịp điệu từng đoạn văn mẫu Band 7.5 - 8.5+. Ghi nhớ cấu trúc ngữ pháp và từ vựng tự nhiên qua vận động ngón tay.
+              </p>
+            </div>
+            <div className="pt-4 mt-auto">
+              <TidArrowCta arrowBg="bg-[#FF9F0A]" bg="bg-[#141414]" textColor="text-white">
+                Khám phá cơ chế ({typingExercises.length} bài)
+              </TidArrowCta>
             </div>
           </div>
 
-          {viewMode === "samples" ? (
-            <div className="space-y-8">
-              {/* Filters */}
-              <Card className="border-dashed bg-muted/30 backdrop-blur">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-md bg-primary/10">
-                      <Filter className="h-4 w-4 text-primary" />
-                    </div>
-                    <CardTitle className="text-base">Lọc bài mẫu</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Chủ đề</Label>
-                      <Select value={filterTopic} onValueChange={setFilterTopic}>
-                        <SelectTrigger className="w-[160px] h-10 bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tất cả chủ đề</SelectItem>
-                          {TOPICS.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Band điểm</Label>
-                      <Select value={filterBand} onValueChange={setFilterBand}>
-                        <SelectTrigger className="w-[140px] h-10 bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tất cả band</SelectItem>
-                          {exercisesData.bandLevels.map((band) => (
-                            <SelectItem key={band} value={band.toString()}>Band {band}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Loại bài</Label>
-                      <Select value={filterTaskType} onValueChange={setFilterTaskType}>
-                        <SelectTrigger className="w-[140px] h-10 bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Tất cả</SelectItem>
-                          <SelectItem value="task1">Task 1</SelectItem>
-                          <SelectItem value="task2">Task 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          {/* BENTO CARD 02: LUYỆN DỊCH VIỆT - ANH */}
+          <div
+            onClick={() => setViewMode("translation")}
+            className="h24-block relative flex flex-col justify-between p-6 rounded-2xl cursor-pointer bg-[#F0FDF4] text-[#141414] min-h-[260px] dark:bg-[#181C26] dark:text-white"
+          >
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest uppercase">
+                <span className="bg-[#141414] px-2 py-0.5 text-white rounded">02</span>
+                DỊCH THUẬT
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight leading-none">
+                Luyện Dịch Việt - Anh<span className="text-[#FF9F0A]">*</span>
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                Chuyển tải câu tiếng Việt sang tiếng Anh học thuật. AI phân tích ngữ pháp, collocations và đề xuất phiên bản Band 8.5+ tức thì.
+              </p>
+            </div>
+            <div className="pt-4 mt-auto">
+              <TidArrowCta arrowBg="bg-[#7CC243]" bg="bg-[#141414]" textColor="text-white">
+                Vào luyện dịch ({translationExercises.length} bài)
+              </TidArrowCta>
+            </div>
+          </div>
 
-              {/* Sample Exercises */}
-              {exercisesByBand.length === 0 ? (
-                <Card className="p-16 text-center border-dashed">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                    <BookOpen className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-lg font-medium">Không tìm thấy bài mẫu</p>
-                  <p className="text-muted-foreground mt-1">Thử thay đổi bộ lọc để xem thêm bài mẫu</p>
-                </Card>
-              ) : (
-                exercisesByBand.map(({ band, exercises }) => (
-                  <div key={band} className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-violet-500 text-white font-bold shadow-lg shadow-primary/25">
-                        <Star className="h-4 w-4" />
-                        Band {band}
-                      </div>
-                      <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
-                      <span className="text-sm text-muted-foreground">{exercises.length} bài mẫu</span>
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {exercises.map((exercise, idx) => (
-                        <Card
-                          key={exercise.id}
-                          className="group cursor-pointer border-2 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
-                          onClick={() => handleSelectSample(exercise)}
-                        >
-                          <div className={`h-1 bg-gradient-to-r ${TOPIC_COLORS[exercise.topic] || "from-gray-500 to-gray-600"}`} />
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between gap-3 mb-4">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge variant="outline" className="gap-1.5 px-3 py-1">
-                                  {TOPIC_ICONS[exercise.topic]}
-                                  {getTopicLabel(exercise.topic)}
-                                </Badge>
-                                <Badge variant="secondary" className="px-3 py-1">
-                                  {exercise.taskType === "task1" ? "Task 1" : "Task 2"}
-                                </Badge>
-                              </div>
-                              <div className="p-2 rounded-full bg-muted group-hover:bg-primary group-hover:text-white transition-colors">
-                                <ChevronRight className="h-4 w-4" />
-                              </div>
-                            </div>
-                            <p className="text-sm leading-relaxed line-clamp-3 group-hover:text-foreground transition-colors">
-                              {exercise.prompt}
-                            </p>
-                            <div className="flex items-center gap-4 mt-4 pt-4 border-t">
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Clock className="h-3.5 w-3.5" />
-                                ~{Math.ceil(exercise.sampleEssay.split(/\s+/).length / 40)} phút
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <PenLine className="h-3.5 w-3.5" />
-                                {exercise.sampleEssay.split(/\s+/).length} từ
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ))
+          {/* BENTO CARD 03: KHO TỪ VỰNG BAND 7.5+ */}
+          <Link
+            href="/vocabulary"
+            className="h24-block relative flex flex-col justify-between p-6 rounded-2xl cursor-pointer bg-[#EFF6FF] text-[#141414] min-h-[260px] dark:bg-[#181C26] dark:text-white"
+          >
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest uppercase">
+                <span className="bg-[#141414] px-2 py-0.5 text-white rounded">03</span>
+                TỪ VỰNG
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight leading-none">
+                Kho Từ Vựng 7.5+<span className="text-[#FF9F0A]">*</span>
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                500+ collocations, idioms & từ nối học thuật phân loại theo 7 chủ đề trọng tâm Task 1 & Task 2 kèm cơ chế lật thẻ flashcard.
+              </p>
+            </div>
+            <div className="pt-4 mt-auto">
+              <TidArrowCta arrowBg="bg-[#7FB2FF]" bg="bg-[#141414]" textColor="text-white">
+                Mở kho từ vựng
+              </TidArrowCta>
+            </div>
+          </Link>
+
+          {/* BENTO CARD 04: CHẤM BÀI & SOÁT LỖI AI */}
+          <div
+            onClick={() => setViewMode("create")}
+            className="h24-block relative flex flex-col justify-between p-6 rounded-2xl cursor-pointer bg-[#FFF1F2] text-[#141414] min-h-[260px] dark:bg-[#181C26] dark:text-white"
+          >
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest uppercase">
+                <span className="bg-[#141414] px-2 py-0.5 text-white rounded">04</span>
+                CHẤM ĐIỂM AI
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight leading-none">
+                Chấm Bài & Soát Lỗi<span className="text-[#FF9F0A]">*</span>
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                Phân tích 4 tiêu chí TR, CC, LR, GRA theo chuẩn giám khảo khảo thí IELTS quốc tế. Miễn phí với Groq Llama 3.3 70B & RAC-VL.
+              </p>
+            </div>
+            <div className="pt-4 mt-auto">
+              <TidArrowCta arrowBg="bg-[#F0573A]" arrowColor="text-white" bg="bg-[#141414]" textColor="text-white">
+                Tạo bài & chấm ngay
+              </TidArrowCta>
+            </div>
+          </div>
+
+          {/* BENTO CARD 05: TIẾN ĐỘ & LỊCH SỬ BÀI LÀM */}
+          <Link
+            href="/history"
+            className="h24-block relative flex flex-col justify-between p-6 rounded-2xl cursor-pointer bg-[#FAF5FF] text-[#141414] min-h-[260px] md:col-span-2 lg:col-span-2 dark:bg-[#181C26] dark:text-white"
+          >
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 font-mono text-xs font-bold tracking-widest uppercase">
+                <span className="bg-[#141414] px-2 py-0.5 text-white rounded">05</span>
+                TIẾN ĐỘ & HUY HIỆU
+              </span>
+              <h3 className="text-2xl font-black uppercase tracking-tight leading-none">
+                Lịch Sử Luyện Tập & Biểu Đồ Phản Xạ<span className="text-[#FF9F0A]">*</span>
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed font-semibold max-w-xl">
+                Theo dõi sự tiến bộ từng ngày: Tốc độ gõ phím WPM, tỷ lệ chính xác từ vựng, chuỗi ngày streak và bảng điểm chi tiết từ các lần chấm bài AI trước đây.
+              </p>
+            </div>
+            <div className="pt-4 mt-auto flex items-center justify-between">
+              <TidArrowCta arrowBg="bg-[#9B5DE5]" arrowColor="text-white" bg="bg-[#141414]" textColor="text-white">
+                Xem lịch sử & bảng vàng
+              </TidArrowCta>
+              <div className="hidden sm:flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground">
+                <Award className="w-4 h-4 text-[#9B5DE5]" />
+                ĐÃ HOÀN THÀNH {stats.totalPracticed} BÀI TẬP
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* 3. TID Catalog Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+        {/* Navigation Switcher Tabs (TID Numbered Bento Pills) */}
+        <div className="flex justify-center">
+          <div className="inline-flex p-1.5 rounded-2xl bg-[#FFF2D9] border-[3px] border-[#141414] shadow-[4px_4px_0_#141414] dark:bg-[#181C26] dark:border-[#384259] dark:shadow-[4px_4px_0_#0A0D14] gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode("samples")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                viewMode === "samples"
+                  ? "bg-[#141414] text-white border-2 border-[#141414] shadow-[2px_2px_0_#141414] dark:bg-[#FFC93C] dark:text-[#141414] dark:border-[#FFC93C]"
+                  : "text-foreground hover:bg-white/60 dark:hover:bg-[#232938]"
+              }`}
+            >
+              <span className="font-mono text-[10px] bg-white/20 px-1 py-0.2 rounded">01</span>
+              <BookOpen className="w-4 h-4" />
+              Luyện gõ bài mẫu ({typingExercises.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("translation")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                viewMode === "translation"
+                  ? "bg-[#7CC243] text-[#141414] border-2 border-[#141414] shadow-[2px_2px_0_#141414]"
+                  : "text-foreground hover:bg-white/60 dark:hover:bg-[#232938]"
+              }`}
+            >
+              <span className="font-mono text-[10px] bg-black/10 px-1 py-0.2 rounded">02</span>
+              <Languages className="w-4 h-4" />
+              Luyện dịch Việt - Anh ({translationExercises.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("create")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
+                viewMode === "create"
+                  ? "bg-[#FFC93C] text-[#141414] border-2 border-[#141414] shadow-[2px_2px_0_#141414]"
+                  : "text-foreground hover:bg-white/60 dark:hover:bg-[#232938]"
+              }`}
+            >
+              <span className="font-mono text-[10px] bg-black/10 px-1 py-0.2 rounded">03</span>
+              <Sparkles className="w-4 h-4" />
+              Tạo bài viết AI
+            </button>
+          </div>
+        </div>
+
+        {/* Filters Bar (Only for samples & translation) */}
+        {viewMode !== "create" && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border-[3px] border-[#141414] bg-white shadow-[4px_4px_0_#141414] dark:bg-[#181C26] dark:border-[#384259] dark:shadow-[4px_4px_0_#0A0D14]">
+            <div className="flex items-center gap-2 text-xs font-black uppercase text-[#141414] dark:text-white shrink-0">
+              <Filter className="w-4 h-4 stroke-[2.5]" />
+              <span>BỘ LỌC CHUYÊN ĐỀ:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Topic Select */}
+              <Select value={filterTopic} onValueChange={setFilterTopic}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Chủ đề" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả chủ đề</SelectItem>
+                  {TOPICS.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Band Select */}
+              <Select value={filterBand} onValueChange={setFilterBand}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Band" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi Band</SelectItem>
+                  <SelectItem value="7">Band 7.0</SelectItem>
+                  <SelectItem value="7.5">Band 7.5</SelectItem>
+                  <SelectItem value="8">Band 8.0</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Task Type Select */}
+              <Select value={filterTaskType} onValueChange={setFilterTaskType}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Dạng bài" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi dạng</SelectItem>
+                  <SelectItem value="task1">Task 1</SelectItem>
+                  <SelectItem value="task2">Task 2</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(filterTopic !== "all" || filterBand !== "all" || filterTaskType !== "all") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFilterTopic("all")
+                    setFilterBand("all")
+                    setFilterTaskType("all")
+                  }}
+                  className="text-xs h-10 font-bold"
+                >
+                  Xóa lọc
+                </Button>
               )}
             </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Mode Selection */}
-              <Card className="overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-primary via-violet-500 to-pink-500" />
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    Chọn chế độ luyện tập
-                  </CardTitle>
-                  <CardDescription>Mỗi chế độ có cách tiếp cận khác nhau để giúp bạn cải thiện kỹ năng viết</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={writingMode}
-                    onValueChange={(v) => {
-                      setWritingMode(v as WritingMode)
-                      setSampleEssay(null)
-                      setVietnameseEssay(null)
-                    }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                  >
-                    <Label
-                      htmlFor="ai-assisted"
-                      className={`relative flex flex-col p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                        writingMode === "ai-assisted" 
-                          ? "border-primary bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg shadow-primary/10" 
-                          : "border-border hover:border-primary/50 hover:shadow-md"
-                      }`}
-                    >
-                      <RadioGroupItem value="ai-assisted" id="ai-assisted" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
-                        writingMode === "ai-assisted" ? "bg-primary text-white" : "bg-muted"
-                      }`}>
-                        <Sparkles className="h-6 w-6" />
-                      </div>
-                      <span className="font-semibold text-lg">Gõ theo mẫu AI</span>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        AI tạo bài mẫu chuẩn, bạn gõ lại để học cách viết và từ vựng IELTS
-                      </p>
-                      {writingMode === "ai-assisted" && (
-                        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </Label>
-                    <Label
-                      htmlFor="self"
-                      className={`relative flex flex-col p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                        writingMode === "self" 
-                          ? "border-primary bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg shadow-primary/10" 
-                          : "border-border hover:border-primary/50 hover:shadow-md"
-                      }`}
-                    >
-                      <RadioGroupItem value="self" id="self" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
-                        writingMode === "self" ? "bg-primary text-white" : "bg-muted"
-                      }`}>
-                        <PenLine className="h-6 w-6" />
-                      </div>
-                      <span className="font-semibold text-lg">Tự viết bài</span>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Tự viết bài hoàn chỉnh, AI sẽ chấm điểm và đưa ra nhận xét chi tiết
-                      </p>
-                      {writingMode === "self" && (
-                        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </Label>
-                    <Label
-                      htmlFor="translation"
-                      className={`relative flex flex-col p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                        writingMode === "translation" 
-                          ? "border-primary bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg shadow-primary/10" 
-                          : "border-border hover:border-primary/50 hover:shadow-md"
-                      }`}
-                    >
-                      <RadioGroupItem value="translation" id="translation" className="sr-only" />
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
-                        writingMode === "translation" ? "bg-primary text-white" : "bg-muted"
-                      }`}>
-                        <Languages className="h-6 w-6" />
-                      </div>
-                      <span className="font-semibold text-lg">Dịch Việt - Anh</span>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Dịch từng câu tiếng Việt sang Anh, AI nhận xét và gợi ý cách dịch hay
-                      </p>
-                      {writingMode === "translation" && (
-                        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </Label>
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+          </div>
+        )}
 
-              {/* Task Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    Cài đặt bài tập
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Loại bài</Label>
-                      <Select value={taskType} onValueChange={(v) => setTaskType(v as TaskType)}>
-                        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="task1">Task 1 (150+ từ)</SelectItem>
-                          <SelectItem value="task2">Task 2 (250+ từ)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Chủ đề</Label>
-                      <Select value={topic} onValueChange={setTopic}>
-                        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="random">🎲 Ngẫu nhiên</SelectItem>
-                          {TOPICS.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Band mục tiêu</Label>
-                      <Select value={bandTarget.toString()} onValueChange={(v) => setBandTarget(Number(v))}>
-                        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {exercisesData.bandLevels.map((band) => (
-                            <SelectItem key={band} value={band.toString()}>⭐ Band {band}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+        {/* TAB 1: SAMPLE ESSAY TYPING */}
+        {viewMode === "samples" && (
+          <div className="space-y-8">
+            {typingByBand.length === 0 ? (
+              <div className="py-16 text-center text-muted-foreground border-2 border-dashed border-[#141414] rounded-2xl bg-white dark:bg-[#181C26]">
+                <BookOpen className="w-10 h-10 mx-auto opacity-40 mb-2 stroke-[2]" />
+                <p className="font-bold">Không tìm thấy bài gõ mẫu phù hợp với bộ lọc.</p>
+              </div>
+            ) : (
+              typingByBand.map(({ band, exercises }) => (
+                <div key={band} className="space-y-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-[#141414] bg-[#FFC93C] text-[#141414] shadow-[2px_2px_0_#141414] text-xs font-black uppercase tracking-wider dark:border-[#384259]">
+                      <Star className="w-3.5 h-3.5 fill-[#141414] stroke-[2]" />
+                      Mục tiêu Band {band}
+                    </span>
+                    <span className="text-xs font-bold text-muted-foreground">
+                      ({exercises.length} bài mẫu chất lượng cao)
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
 
-              {/* Prompt */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <PenLine className="h-5 w-5 text-primary" />
-                        Đề bài
-                      </CardTitle>
-                      <CardDescription>Tạo đề bài tự động bằng AI hoặc nhập đề của bạn</CardDescription>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {exercises.map((ex) => {
+                      const wordCount = ex.sampleEssay.trim().split(/\s+/).length
+                      return (
+                        <Card
+                          key={ex.id}
+                          className="h24-block group relative cursor-pointer flex flex-col justify-between bg-white dark:bg-[#181C26]"
+                          onClick={() => handleSelectSample(ex)}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge variant="yellow" className="gap-1.5 capitalize font-bold">
+                                {TOPIC_ICONS[ex.topic]}
+                                {ex.topic}
+                              </Badge>
+                              <span className="font-mono text-xs font-black px-2 py-0.5 rounded bg-[#141414] text-white uppercase dark:bg-[#FFC93C] dark:text-[#141414]">
+                                {ex.taskType === "task1" ? "Task 1" : "Task 2"}
+                              </span>
+                            </div>
+
+                            <h3 className="font-black text-lg text-[#141414] group-hover:text-[#FF9F0A] transition-colors line-clamp-2 dark:text-white">
+                              {ex.prompt}
+                            </h3>
+
+                            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed font-medium">
+                              {ex.sampleEssay}
+                            </p>
+                          </div>
+
+                          <div className="pt-4 border-t-2 border-[#141414]/10 dark:border-border/60 flex items-center justify-between mt-4 text-xs font-bold text-muted-foreground">
+                            <span className="flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5" />
+                              {wordCount} từ
+                            </span>
+
+                            <span className="flex items-center gap-1 font-black text-[#141414] dark:text-[#FFC93C] group-hover:translate-x-1 transition-transform">
+                              Luyện gõ ngay
+                              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                            </span>
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: VIETNAMESE TO ENGLISH TRANSLATION */}
+        {viewMode === "translation" && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-2xl border-[3px] border-[#141414] bg-[#7CC243]/15 shadow-[4px_4px_0_#141414] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 dark:bg-[#181C26] dark:border-[#384259] dark:shadow-[4px_4px_0_#0A0D14]">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-5 h-5 text-[#141414] stroke-[2.5] dark:text-[#7CC243]" />
+                  <h3 className="font-black text-lg text-[#141414] dark:text-white">
+                    Luyện Dịch Câu Việt - Anh (IELTS Academic Translation)
+                  </h3>
+                </div>
+                <p className="text-xs text-[#141414]/80 dark:text-muted-foreground max-w-xl font-semibold">
+                  Dịch từng câu tiếng Việt sang tiếng Anh học thuật. AI đánh giá điểm số, gợi ý collocations C1/C2 và bản dịch đối chiếu tức thì.
+                </p>
+              </div>
+
+              <Link href="/practice/translation">
+                <Button variant="green" size="sm" className="gap-2 shrink-0">
+                  Xem tất cả bài dịch
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {translationExercises.map((ex) => {
+                const sentenceCount = ex.sampleEssay.split(/[.!?]\s+/).filter(Boolean).length
+                const firstSentence = ex.sampleEssay.split(/[.!?]\s+/)[0] || ex.sampleEssay
+                return (
+                  <Card
+                    key={ex.id}
+                    className="h24-block group relative cursor-pointer flex flex-col justify-between bg-white dark:bg-[#181C26]"
+                    onClick={() => handleSelectSample(ex, "translation")}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="green" className="gap-1.5 capitalize font-bold">
+                          {TOPIC_ICONS[ex.topic]}
+                          {ex.topic}
+                        </Badge>
+                        <Badge variant="yellow">Band {ex.bandTarget}</Badge>
+                      </div>
+
+                      <h3 className="font-black text-lg text-[#141414] group-hover:text-[#7CC243] transition-colors line-clamp-2 dark:text-white">
+                        {ex.prompt}
+                      </h3>
+
+                      <div className="p-3.5 rounded-xl bg-[#FFF8EC] border-2 border-[#141414]/20 text-xs text-[#141414]/90 italic line-clamp-2 font-medium dark:bg-[#232938] dark:border-border dark:text-muted-foreground">
+                        &ldquo;{firstSentence}...&rdquo;
+                      </div>
                     </div>
-                    <Button onClick={generatePrompt} disabled={isGeneratingPrompt} size="lg" className="gap-2">
-                      {isGeneratingPrompt ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Đang tạo...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4" />
-                          Tạo đề bài AI
-                        </>
-                      )}
+
+                    <div className="pt-4 border-t-2 border-[#141414]/10 dark:border-border/60 flex items-center justify-between mt-4 text-xs font-bold text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {sentenceCount} câu cần dịch
+                      </span>
+
+                      <span className="flex items-center gap-1 font-black text-[#141414] dark:text-[#7CC243] group-hover:translate-x-1 transition-transform">
+                        Bắt đầu dịch câu
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                      </span>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: CUSTOM AI ESSAY GENERATOR */}
+        {viewMode === "create" && (
+          <div className="max-w-2xl mx-auto space-y-6">
+            <Card className="h24-block p-6 sm:p-8 space-y-6 bg-white dark:bg-[#181C26]">
+              <div>
+                <h3 className="text-2xl font-black text-[#141414] dark:text-white">
+                  Tạo Đề Bài Luyện Tập Bằng AI<span className="text-[#FF9F0A]">*</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 font-semibold">
+                  Chọn chủ đề và mục tiêu band điểm để AI tạo đề bài và nội dung mẫu phù hợp nhất.
+                </p>
+              </div>
+
+              {/* Writing Mode */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider">Chế độ luyện tập</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWritingMode("ai-assisted")}
+                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                      writingMode === "ai-assisted"
+                        ? "border-[#141414] bg-[#FFC93C] text-[#141414] shadow-[3px_3px_0_#141414] font-black"
+                        : "border-[#141414]/40 hover:border-[#141414] bg-white text-muted-foreground dark:bg-[#181C26] dark:border-border"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-black text-sm">
+                      <PenLine className="w-4 h-4 stroke-[2.5]" />
+                      Luyện gõ bài mẫu
+                    </div>
+                    <p className="text-xs mt-1 font-medium opacity-80">Gõ theo bài văn mẫu chuẩn Band</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWritingMode("translation")}
+                    className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                      writingMode === "translation"
+                        ? "border-[#141414] bg-[#7CC243] text-[#141414] shadow-[3px_3px_0_#141414] font-black"
+                        : "border-[#141414]/40 hover:border-[#141414] bg-white text-muted-foreground dark:bg-[#181C26] dark:border-border"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-black text-sm">
+                      <Languages className="w-4 h-4 stroke-[2.5]" />
+                      Luyện dịch Việt - Anh
+                    </div>
+                    <p className="text-xs mt-1 font-medium opacity-80">Dịch từng câu tiếng Việt sang tiếng Anh</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Task Type & Band Target */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider">Dạng bài</Label>
+                  <Select value={taskType} onValueChange={(val: any) => setTaskType(val)} className="w-full">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Dạng bài" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="task1">IELTS Task 1 (Report)</SelectItem>
+                      <SelectItem value="task2">IELTS Task 2 (Essay)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider">Band mục tiêu</Label>
+                  <Select value={bandTarget.toString()} onValueChange={(val) => setBandTarget(parseFloat(val))} className="w-full">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Band điểm" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6.5">Band 6.5</SelectItem>
+                      <SelectItem value="7">Band 7.0</SelectItem>
+                      <SelectItem value="7.5">Band 7.5</SelectItem>
+                      <SelectItem value="8">Band 8.0</SelectItem>
+                      <SelectItem value="8.5">Band 8.5</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Topic */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider">Chủ đề bài viết</Label>
+                <Select value={topic} onValueChange={setTopic} className="w-full">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn chủ đề" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="random">🎲 Ngẫu nhiên</SelectItem>
+                    {TOPICS.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Prompt generation */}
+              <div className="space-y-2 pt-2 border-t-2 border-[#141414]/10 dark:border-border/60">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-wider">Đề bài IELTS</Label>
+                  <Button
+                    type="button"
+                    variant="yellow"
+                    size="sm"
+                    onClick={generatePrompt}
+                    disabled={isGeneratingPrompt}
+                    className="text-xs gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+                    {isGeneratingPrompt ? "Đang tạo..." : "Sinh đề bằng AI"}
+                  </Button>
+                </div>
+                <Textarea
+                  rows={3}
+                  placeholder="Nhập hoặc để AI sinh đề bài IELTS..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="text-sm font-medium"
+                />
+              </div>
+
+              {/* Sample Essay or Vietnamese Essay */}
+              {writingMode === "ai-assisted" && prompt && (
+                <div className="space-y-2 pt-2 border-t-2 border-[#141414]/10 dark:border-border/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Bài văn mẫu tiếng Anh</Label>
+                    <Button
+                      type="button"
+                      variant="yellow"
+                      size="sm"
+                      onClick={generateSampleEssay}
+                      disabled={isGeneratingEssay || !prompt}
+                      className="text-xs gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+                      {isGeneratingEssay ? "Đang viết bài..." : "Tạo bài mẫu bằng AI"}
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Nhấn 'Tạo đề bài AI' để tạo đề tự động, hoặc nhập đề bài của bạn vào đây..."
-                    className="min-h-[140px] text-base"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Sample Essay */}
-              {writingMode === "ai-assisted" && prompt && (
-                <Card className="border-green-200 dark:border-green-800/50">
-                  <CardHeader className="bg-green-50/50 dark:bg-green-950/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                          <BookOpen className="h-5 w-5" />
-                          Bài mẫu
-                        </CardTitle>
-                        <CardDescription>AI sẽ viết bài mẫu chuẩn band {bandTarget} để bạn gõ theo</CardDescription>
-                      </div>
-                      <Button onClick={generateSampleEssay} disabled={isGeneratingEssay || !prompt} size="lg" variant="outline" className="gap-2 border-green-300 hover:bg-green-100 dark:border-green-700 dark:hover:bg-green-900/30">
-                        {isGeneratingEssay ? (
-                          <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            Đang viết...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            Tạo bài mẫu
-                          </>
-                        )}
-                      </Button>
+                  {sampleEssay ? (
+                    <div className="p-4 bg-[#FFF8EC] rounded-xl text-xs leading-relaxed max-h-40 overflow-y-auto border-2 border-[#141414]/20 font-medium dark:bg-[#232938] dark:border-border">
+                      {sampleEssay}
                     </div>
-                  </CardHeader>
-                  {sampleEssay && (
-                    <CardContent className="pt-4">
-                      <div className="p-5 bg-muted/50 rounded-xl max-h-[300px] overflow-y-auto border">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{sampleEssay}</p>
-                      </div>
-                      <div className="flex items-center gap-4 mt-3">
-                        <Badge variant="secondary" className="gap-1">
-                          <PenLine className="h-3 w-3" />
-                          {sampleEssay.split(/\s+/).filter(Boolean).length} từ
-                        </Badge>
-                        <Badge variant="outline" className="gap-1">
-                          <Clock className="h-3 w-3" />
-                          ~{Math.ceil(sampleEssay.split(/\s+/).filter(Boolean).length / 40)} phút
-                        </Badge>
-                      </div>
-                    </CardContent>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic font-medium">
+                      Nhấn nút &ldquo;Tạo bài mẫu bằng AI&rdquo; để chuẩn bị nội dung luyện gõ.
+                    </p>
                   )}
-                </Card>
+                </div>
               )}
 
-              {/* Vietnamese Essay */}
               {writingMode === "translation" && prompt && (
-                <Card className="border-blue-200 dark:border-blue-800/50">
-                  <CardHeader className="bg-blue-50/50 dark:bg-blue-950/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                          <Languages className="h-5 w-5" />
-                          Bài văn tiếng Việt
-                        </CardTitle>
-                        <CardDescription>AI sẽ viết bài văn tiếng Việt để bạn dịch sang tiếng Anh</CardDescription>
-                      </div>
-                      <Button onClick={generateVietnameseEssay} disabled={isGeneratingVietnamese || !prompt} size="lg" variant="outline" className="gap-2 border-blue-300 hover:bg-blue-100 dark:border-blue-700 dark:hover:bg-blue-900/30">
-                        {isGeneratingVietnamese ? (
-                          <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            Đang viết...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            Tạo bài văn
-                          </>
-                        )}
-                      </Button>
+                <div className="space-y-2 pt-2 border-t-2 border-[#141414]/10 dark:border-border/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#141414] dark:text-white">
+                      Bài văn tiếng Việt để luyện dịch
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="green"
+                      size="sm"
+                      onClick={generateVietnameseEssay}
+                      disabled={isGeneratingVietnamese || !prompt}
+                      className="text-xs gap-1.5"
+                    >
+                      <Languages className="w-3.5 h-3.5 stroke-[2.5]" />
+                      {isGeneratingVietnamese ? "Đang tạo bài..." : "Tạo bài tiếng Việt bằng AI"}
+                    </Button>
+                  </div>
+                  {vietnameseEssay ? (
+                    <div className="p-4 bg-[#F0FDF4] rounded-xl text-xs leading-relaxed max-h-40 overflow-y-auto border-2 border-[#141414]/20 font-medium dark:bg-[#232938] dark:border-border">
+                      {vietnameseEssay}
                     </div>
-                  </CardHeader>
-                  {vietnameseEssay && (
-                    <CardContent className="pt-4">
-                      <div className="p-5 bg-muted/50 rounded-xl max-h-[300px] overflow-y-auto border">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{vietnameseEssay}</p>
-                      </div>
-                      <div className="mt-3">
-                        <Badge variant="secondary" className="gap-1">
-                          <PenLine className="h-3 w-3" />
-                          {vietnameseEssay.split(/\s+/).filter(Boolean).length} từ
-                        </Badge>
-                      </div>
-                    </CardContent>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic font-medium">
+                      Nhấn nút &ldquo;Tạo bài tiếng Việt bằng AI&rdquo; để chuẩn bị các câu dịch.
+                    </p>
                   )}
-                </Card>
+                </div>
               )}
 
               {/* Start Button */}
-              <div className="flex justify-center pt-4">
+              <div className="pt-4 flex justify-end">
                 <Button
                   size="lg"
+                  variant="yellow"
                   onClick={startPractice}
-                  disabled={!prompt || (writingMode === "ai-assisted" && !sampleEssay) || (writingMode === "translation" && !vietnameseEssay)}
-                  className="gap-3 h-14 px-10 text-lg rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                  disabled={
+                    !prompt ||
+                    (writingMode === "ai-assisted" && !sampleEssay) ||
+                    (writingMode === "translation" && !vietnameseEssay)
+                  }
+                  className="gap-2 text-base"
                 >
-                  <Zap className="h-5 w-5" />
-                  Bắt đầu luyện tập
-                  <ArrowRight className="h-5 w-5" />
+                  <Zap className="w-4 h-4 stroke-[2.5]" />
+                  Bắt đầu luyện tập ngay
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </Button>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            </Card>
+          </div>
+        )}
+      </section>
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#FAF7F0] dark:bg-[#11141B]">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#141414] border-t-transparent dark:border-[#FFC93C]" />
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   )
 }

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid"
+import exercisesData from "@/data/exercises.json"
 
 // ===== TYPES =====
 export type WritingMode = "self" | "ai-assisted" | "translation"
@@ -28,6 +29,7 @@ export interface Submission {
   wpm: number
   accuracy: number
   wordCount: number
+  timeSpentSeconds?: number
   createdAt: string
 }
 
@@ -47,8 +49,10 @@ export interface Vocabulary {
   id: string
   word: string
   meaning: string
+  phonetic?: string
   example?: string
   category?: string
+  mastered?: boolean
   createdAt: string
   reviewCount: number
   lastReviewAt?: string
@@ -63,13 +67,30 @@ export interface TranslationHistory {
   createdAt: string
 }
 
+export type FontFamilyOption = "mono" | "serif" | "sans" | "handwriting"
+export type NotebookPaperStyle = "ruled" | "grid" | "dot" | "blank"
+export type CaretStyle = "bar" | "block" | "underline"
+export type LineHeightOption = "compact" | "normal" | "relaxed"
+export type UntypedTextColor = "blue" | "purple" | "teal" | "slate"
+
 export interface UserSettings {
   theme: "light" | "dark" | "system"
   defaultTargetLang: "en" | "vi"
   autoSave: boolean
   fontSize: number
+  fontFamily: FontFamilyOption
+  notebookPaperStyle: NotebookPaperStyle
+  caretStyle: CaretStyle
+  lineHeight: LineHeightOption
+  textAnimation: boolean
+  untypedTextColor: UntypedTextColor
   soundEnabled: boolean
+  soundVolume: number
+  soundTheme: "clicky" | "tactile" | "soft" | "typewriter"
   showKeyboard: boolean
+  groqApiKey: string
+  groqModel: string
+  examTimerMinutes: number
 }
 
 // ===== STORAGE KEYS =====
@@ -83,13 +104,24 @@ const KEYS = {
   CURRENT_PRACTICE: "ielts_current_practice",
 }
 
-const DEFAULT_SETTINGS: UserSettings = {
+export const DEFAULT_SETTINGS: UserSettings = {
   theme: "system",
   defaultTargetLang: "vi",
   autoSave: true,
-  fontSize: 16,
+  fontSize: 18,
+  fontFamily: "mono",
+  notebookPaperStyle: "ruled",
+  caretStyle: "bar",
+  lineHeight: "normal",
+  textAnimation: true,
+  untypedTextColor: "blue",
   soundEnabled: true,
+  soundVolume: 0.15,
+  soundTheme: "clicky",
   showKeyboard: true,
+  groqApiKey: "",
+  groqModel: "qwen/qwen3.8-27b",
+  examTimerMinutes: 0,
 }
 
 // ===== HELPER =====
@@ -113,6 +145,23 @@ function getItem<T>(key: string, defaultValue: T): T {
 function setItem<T>(key: string, value: T): void {
   if (typeof window === "undefined") return
   localStorage.setItem(key, JSON.stringify(value))
+}
+
+// ===== AI HEADERS =====
+export function getAiHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+  if (typeof window !== "undefined") {
+    const settings = getSettings()
+    if (settings.groqApiKey) {
+      headers["x-groq-api-key"] = settings.groqApiKey.trim()
+    }
+    if (settings.groqModel) {
+      headers["x-groq-model"] = settings.groqModel.trim()
+    }
+  }
+  return headers
 }
 
 // ===== DEVICE ID =====
@@ -143,7 +192,18 @@ export function getExercises(): Exercise[] {
 }
 
 export function getExerciseById(id: string): Exercise | undefined {
-  return getExercises().find((e) => e.id === id)
+  const fromStorage = getExercises().find((e) => e.id === id)
+  if (fromStorage) return fromStorage
+
+  // Fallback to preset exercises in data/exercises.json
+  const preset = (exercisesData.exercises as any[]).find((e) => e.id === id)
+  if (preset) {
+    return {
+      ...preset,
+      createdAt: new Date().toISOString(),
+    }
+  }
+  return undefined
 }
 
 export function deleteExercise(id: string): void {
@@ -184,16 +244,38 @@ export function deleteSubmission(id: string): void {
 export function addVocabulary(
   word: string,
   meaning: string,
+  phonetic?: string,
   example?: string,
   category?: string
 ): Vocabulary {
   const vocabularies = getVocabularies()
+  const normalizedWord = word.trim().toLowerCase()
+  
+  // Update if already exists
+  const existingIndex = vocabularies.findIndex((v) => v.word.toLowerCase() === normalizedWord)
+  if (existingIndex !== -1) {
+    const updated = {
+      ...vocabularies[existingIndex],
+      meaning: meaning || vocabularies[existingIndex].meaning,
+      phonetic: phonetic || vocabularies[existingIndex].phonetic,
+      example: example || vocabularies[existingIndex].example,
+      category: category || vocabularies[existingIndex].category,
+      reviewCount: (vocabularies[existingIndex].reviewCount || 0) + 1,
+      lastReviewAt: new Date().toISOString(),
+    }
+    vocabularies[existingIndex] = updated
+    setItem(KEYS.VOCABULARIES, [...vocabularies])
+    return updated
+  }
+
   const newVocab: Vocabulary = {
     id: generateId(),
-    word,
+    word: normalizedWord,
     meaning,
+    phonetic,
     example,
     category,
+    mastered: false,
     createdAt: new Date().toISOString(),
     reviewCount: 0,
   }
@@ -239,7 +321,6 @@ export function addTranslationHistory(
     targetLang,
     createdAt: new Date().toISOString(),
   }
-  // Giới hạn 100 bản ghi
   setItem(KEYS.TRANSLATION_HISTORY, [newHistory, ...history].slice(0, 100))
   return newHistory
 }
@@ -254,7 +335,8 @@ export function clearTranslationHistory(): void {
 
 // ===== SETTINGS =====
 export function getSettings(): UserSettings {
-  return getItem<UserSettings>(KEYS.SETTINGS, DEFAULT_SETTINGS)
+  const stored = getItem<Partial<UserSettings>>(KEYS.SETTINGS, {})
+  return { ...DEFAULT_SETTINGS, ...stored }
 }
 
 export function updateSettings(updates: Partial<UserSettings>): UserSettings {
@@ -287,14 +369,18 @@ export function clearCurrentPractice(): void {
 
 // ===== EXPORT/IMPORT =====
 export function exportAllData(): string {
-  return JSON.stringify({
-    deviceId: getDeviceId(),
-    exercises: getExercises(),
-    submissions: getSubmissions(),
-    vocabularies: getVocabularies(),
-    translationHistory: getTranslationHistory(),
-    settings: getSettings(),
-  }, null, 2)
+  return JSON.stringify(
+    {
+      deviceId: getDeviceId(),
+      exercises: getExercises(),
+      submissions: getSubmissions(),
+      vocabularies: getVocabularies(),
+      translationHistory: getTranslationHistory(),
+      settings: getSettings(),
+    },
+    null,
+    2
+  )
 }
 
 export function importAllData(jsonString: string): boolean {

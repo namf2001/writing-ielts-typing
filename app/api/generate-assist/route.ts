@@ -1,34 +1,46 @@
-import { generateText } from "ai"
+import { generateAiText } from "@/lib/ai"
 
 export async function POST(req: Request) {
-  const { prompt, bandTarget, taskType, currentEssay } = await req.json()
+  try {
+    const { prompt, bandTarget = 7, taskType = "task2", currentEssay } = await req.json()
 
-  const minWords = taskType === "task1" ? 150 : 250
+    const customApiKey = req.headers.get("x-groq-api-key") || undefined
+    const customModel = req.headers.get("x-groq-model") || undefined
 
-  const systemPrompt = `You are an IELTS writing assistant. Generate a model essay that would score around Band ${bandTarget}.
+    const minWords = taskType === "task1" ? 150 : 250
 
-Writing Prompt: ${prompt}
+    const systemPrompt = `You are a high-level IELTS writing coach.
+The student is practicing their IELTS writing and needs assistance.
 
-${currentEssay ? `Current essay draft (user wants to improve this):\n${currentEssay}\n\n` : ""}
+Writing Prompt:
+"${prompt || "IELTS Essay"}"
 
-Requirements:
-- Write a complete essay of at least ${minWords} words
-- Target Band ${bandTarget} vocabulary and grammar complexity
-- Use appropriate academic writing style
-- Include clear introduction, body paragraphs, and conclusion
-- Use cohesive devices and varied sentence structures
-- If there's a current draft, improve upon it while keeping the user's ideas
+${currentEssay ? `Current Student's Draft:\n"""${currentEssay}"""\n` : ""}
 
-Write the essay now:`
+Task:
+${
+  currentEssay
+    ? `Analyze the student's draft and provide a polished, improved version at Band ${bandTarget} that preserves their core ideas while elevating vocabulary, eliminating grammatical errors, and improving logical cohesion.`
+    : `Generate a model outline and full essay targeted at Band ${bandTarget} (at least ${minWords} words).`
+}
 
-  const { text } = await generateText({
-    model: "google/gemini-2.0-flash-001",
-    prompt: systemPrompt,
-    maxOutputTokens: 2000,
-    temperature: 0.7,
-  })
+Output ONLY the revised/generated essay text directly. Do not include introductory conversational chatter.`
 
-  return Response.json({
-    suggestion: text.trim(),
-  })
+    const result = await generateAiText({
+      prompt: "Generate the response now:",
+      system: systemPrompt,
+      temperature: 0.6,
+      maxTokens: 1500,
+      apiKey: customApiKey,
+      model: customModel,
+    })
+
+    return Response.json({ suggestion: result.trim() })
+  } catch (error: any) {
+    console.error("Generate assist error:", error)
+    return Response.json(
+      { error: error?.message || "Không thể tạo gợi ý viết lúc này." },
+      { status: 500 }
+    )
+  }
 }

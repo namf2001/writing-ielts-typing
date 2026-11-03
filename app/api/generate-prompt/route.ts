@@ -1,57 +1,37 @@
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
+import { generateAiText } from "@/lib/ai"
 
 export async function POST(req: Request) {
   try {
-    const { topic, taskType, bandTarget } = await req.json()
+    const { topic, taskType = "task2", bandTarget = 7 } = await req.json()
 
-    const topicInstruction =
-      topic && topic !== "random"
-        ? `about the topic: ${topic}`
-        : "on a random common IELTS topic (education, technology, environment, health, society, work, culture)"
+    const customApiKey = req.headers.get("x-groq-api-key") || undefined
+    const customModel = req.headers.get("x-groq-model") || undefined
 
-    const taskInstruction =
-      taskType === "task1"
-        ? "Write an IELTS Academic Writing Task 1 prompt. The prompt should describe a chart, graph, table, or diagram that candidates need to analyze and summarize in at least 150 words."
-        : "Write an IELTS Academic Writing Task 2 prompt. The prompt should present an opinion, problem, or discussion topic that candidates need to write an essay about in at least 250 words."
+    const systemPrompt = `You are an official Cambridge IELTS test writer. Generate an authentic, realistic IELTS Writing exam prompt.
 
-    const prompt = `${taskInstruction}
-
-Topic: ${topicInstruction}
+Task Type: ${taskType === "task1" ? "IELTS Academic Task 1 (or General Training Letter)" : "IELTS Task 2 (Essay)"}
+Topic Category: ${topic ? topic : "Any contemporary global topic (education, environment, technology, society, health, economy, culture, work)"}
+Target Band Level: Band ${bandTarget}
 
 Requirements:
-- The prompt should be clear and specific
-- It should be suitable for IELTS band ${bandTarget || 7} level
-- Write only the prompt text, no additional instructions
-- Keep it concise but comprehensive
+- Follow real Cambridge IELTS question phrasing (e.g. "To what extent do you agree or disagree?", "Discuss both views and give your opinion.", "What are the causes of this and what solutions can be suggested?", "Summarise the information by selecting and reporting the main features...").
+- For Task 2, include clear instructions: "Give reasons for your answer and include any relevant examples from your own knowledge or experience."
+- Return ONLY the prompt text directly. No preamble, no greetings, no markdown backticks.`
 
-Generate the prompt now:`
-
-    const { text } = await generateText({
-      model: google("gemini-2.0-flash"),
-      prompt,
-      maxOutputTokens: 500,
+    const promptText = await generateAiText({
+      prompt: "Generate 1 authentic IELTS writing prompt now.",
+      system: systemPrompt,
       temperature: 0.8,
+      maxTokens: 300,
+      apiKey: customApiKey,
+      model: customModel,
     })
 
-    return Response.json({
-      prompt: text.trim(),
-      topic: topic || "random",
-    })
-  } catch (error: unknown) {
+    return Response.json({ prompt: promptText.trim() })
+  } catch (error: any) {
     console.error("Generate prompt error:", error)
-    
-    // Kiểm tra lỗi rate limit
-    const errorObj = error as { lastError?: { statusCode?: number } }
-    if (errorObj?.lastError?.statusCode === 429) {
-      return Response.json(
-        { error: "Đã vượt quá giới hạn API. Vui lòng đợi 1-2 phút rồi thử lại." },
-        { status: 429 }
-      )
-    }
-    
     return Response.json(
-      { error: "Không thể tạo đề bài. Vui lòng thử lại sau." },
+      { error: error?.message || "Không thể tạo đề bài tự động." },
       { status: 500 }
     )
   }

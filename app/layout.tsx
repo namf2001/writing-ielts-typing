@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter, Merriweather } from "next/font/google"
+import { Inter, Merriweather, JetBrains_Mono, Caveat } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "next-themes"
 import { AppLayout } from "@/components/app-layout"
@@ -15,6 +15,17 @@ const merriweather = Merriweather({
   subsets: ["latin", "vietnamese"],
   weight: ["300", "400", "700", "900"],
   variable: "--font-merriweather",
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-mono-jb",
+})
+
+const caveat = Caveat({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "600", "700"],
+  variable: "--font-caveat",
 })
 
 export const metadata: Metadata = {
@@ -35,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${caveat.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <AppLayout>{children}</AppLayout>
         </ThemeProvider>

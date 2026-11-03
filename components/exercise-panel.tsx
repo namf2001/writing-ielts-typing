@@ -4,7 +4,7 @@ import { X, Sparkles, Loader2, Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { WritingMode, TaskType } from "./typing-practice"
+import type { WritingMode, TaskType } from "@/lib/storage"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -28,14 +28,14 @@ interface ExercisePanelProps {
 }
 
 const topics = [
-  { value: "random", label: "Ngẫu nhiên" },
-  { value: "education", label: "Giáo dục" },
-  { value: "technology", label: "Công nghệ" },
-  { value: "environment", label: "Môi trường" },
-  { value: "health", label: "Sức khỏe" },
-  { value: "society", label: "Xã hội" },
-  { value: "work", label: "Công việc" },
-  { value: "culture", label: "Văn hóa" },
+  { value: "random", label: "🎲 Ngẫu nhiên" },
+  { value: "education", label: "🎓 Giáo dục" },
+  { value: "technology", label: "💻 Công nghệ" },
+  { value: "environment", label: "🌱 Môi trường" },
+  { value: "health", label: "❤️ Sức khỏe" },
+  { value: "society", label: "👥 Xã hội" },
+  { value: "work", label: "💼 Kinh tế / Việc làm" },
+  { value: "culture", label: "🎨 Văn hóa" },
 ]
 
 export function ExercisePanel({
@@ -61,46 +61,55 @@ export function ExercisePanel({
   const canStart = writingMode === "self" ? prompt.length > 0 : sampleEssay !== null
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-border">
-          <h2 className="text-lg md:text-xl font-bold text-foreground">Chọn bài tập</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button>
+    <div className="fixed inset-0 z-50 bg-[#141414]/70 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#181C26] border-[3px] border-[#141414] dark:border-[#384259] rounded-3xl shadow-[8px_8px_0_#141414] dark:shadow-[8px_8px_0_#0A0D14] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 md:p-6 border-b-2 border-[#141414]/15 dark:border-border">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#FF9F0A] border border-[#141414]" />
+            <h2 className="text-xl font-black text-[#141414] dark:text-white uppercase tracking-tight">
+              Chọn Bài Tập IELTS<span className="text-[#FF9F0A]">*</span>
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl border-2 border-[#141414] hover:bg-[#F0573A] hover:text-white transition-all cursor-pointer"
+          >
+            <X className="w-4 h-4 stroke-[2.5]" />
+          </button>
         </div>
 
-        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-          {/* Writing Mode - Đặt lên đầu */}
+        <div className="p-5 md:p-7 space-y-5 md:space-y-6">
+          {/* Writing Mode */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Chế độ luyện tập</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider">Chế độ luyện tập</Label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   writingMode === "self"
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-muted-foreground"
+                    ? "border-[#141414] bg-[#FFC93C] text-[#141414] shadow-[3px_3px_0_#141414] font-black"
+                    : "border-[#141414]/30 hover:border-[#141414] bg-white text-muted-foreground dark:bg-[#181C26] dark:border-border"
                 }`}
                 onClick={() => setWritingMode("self")}
               >
-                <span className="font-medium block mb-1">✍️ Tự viết</span>
-                <span className="text-xs text-muted-foreground">
-                  Tự viết bài theo đề, có thể chấm điểm IELTS
+                <span className="font-black block mb-1">✍️ Tự viết (Chấm điểm)</span>
+                <span className="text-xs opacity-80 font-medium">
+                  Tự gõ bài theo đề, AI chấm 4 tiêu chí IELTS
                 </span>
               </button>
               <button
                 type="button"
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                className={`p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   writingMode === "ai-assisted"
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-muted-foreground"
+                    ? "border-[#141414] bg-[#7CC243] text-[#141414] shadow-[3px_3px_0_#141414] font-black"
+                    : "border-[#141414]/30 hover:border-[#141414] bg-white text-muted-foreground dark:bg-[#181C26] dark:border-border"
                 }`}
                 onClick={() => setWritingMode("ai-assisted")}
               >
-                <span className="font-medium block mb-1">🤖 Gõ theo mẫu</span>
-                <span className="text-xs text-muted-foreground">
-                  Gõ theo bài mẫu AI, luyện kỹ năng gõ phím
+                <span className="font-black block mb-1">⌨️ Gõ theo mẫu</span>
+                <span className="text-xs opacity-80 font-medium">
+                  Gõ theo bài mẫu AI chuẩn Band, luyện tốc độ WPM
                 </span>
               </button>
             </div>
@@ -109,8 +118,8 @@ export function ExercisePanel({
           {/* Topic & Task Type */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Chủ đề</Label>
-              <Select value={topic} onValueChange={setTopic}>
+              <Label className="text-xs font-bold uppercase tracking-wider">Chủ đề</Label>
+              <Select value={topic} onValueChange={setTopic} className="w-full">
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn chủ đề" />
                 </SelectTrigger>
@@ -125,8 +134,8 @@ export function ExercisePanel({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Loại bài</Label>
-              <Select value={taskType} onValueChange={(v) => setTaskType(v as TaskType)}>
+              <Label className="text-xs font-bold uppercase tracking-wider">Loại bài</Label>
+              <Select value={taskType} onValueChange={(v) => setTaskType(v as TaskType)} className="w-full">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -141,13 +150,13 @@ export function ExercisePanel({
           {/* Band Target (chỉ hiện ở chế độ AI hỗ trợ) */}
           {writingMode === "ai-assisted" && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Band mục tiêu</Label>
-              <Select value={bandTarget.toString()} onValueChange={(v) => setBandTarget(Number(v))}>
+              <Label className="text-xs font-bold uppercase tracking-wider">Band mục tiêu</Label>
+              <Select value={bandTarget.toString()} onValueChange={(v) => setBandTarget(Number(v))} className="w-full">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9].map((band) => (
+                  {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((band) => (
                     <SelectItem key={band} value={band.toString()}>
                       Band {band}
                     </SelectItem>
@@ -160,22 +169,20 @@ export function ExercisePanel({
           {/* Generate Prompt Button */}
           <Button
             variant="outline"
-            className="w-full gap-2 bg-transparent"
+            className="w-full gap-2"
             onClick={onGeneratePrompt}
             disabled={isGeneratingPrompt}
           >
-            {isGeneratingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {isGeneratingPrompt ? "Đang tạo đề..." : "Tạo đề bài mới"}
+            {isGeneratingPrompt ? <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" /> : <Sparkles className="w-4 h-4 stroke-[2.5]" />}
+            {isGeneratingPrompt ? "Đang tạo đề..." : "Tạo đề bài mới bằng AI"}
           </Button>
 
           {/* Prompt Display */}
           {prompt && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Đề bài</Label>
-              <div className="p-3 md:p-4 bg-secondary/50 rounded-lg border border-border">
-                <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt}</ReactMarkdown>
-                </div>
+              <Label className="text-xs font-bold uppercase tracking-wider">Đề bài</Label>
+              <div className="p-4 bg-[#FFF8EC] rounded-2xl border-2 border-[#141414]/20 text-xs sm:text-sm font-medium leading-relaxed dark:bg-[#232938] dark:border-border">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{prompt}</ReactMarkdown>
               </div>
             </div>
           )}
@@ -184,11 +191,11 @@ export function ExercisePanel({
           {writingMode === "ai-assisted" && prompt && (
             <Button
               variant="outline"
-              className="w-full gap-2 bg-transparent"
+              className="w-full gap-2"
               onClick={onGenerateEssay}
               disabled={isGeneratingEssay}
             >
-              {isGeneratingEssay ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {isGeneratingEssay ? <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" /> : <Sparkles className="w-4 h-4 stroke-[2.5]" />}
               {isGeneratingEssay ? "Đang tạo bài mẫu..." : `Tạo bài mẫu Band ${bandTarget}`}
             </Button>
           )}
@@ -196,35 +203,25 @@ export function ExercisePanel({
           {/* Sample Essay Display (chỉ hiện ở chế độ AI hỗ trợ) */}
           {writingMode === "ai-assisted" && sampleEssay && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Bài mẫu ({sampleEssay.split(/\s+/).length} từ)</Label>
-              <div className="p-3 md:p-4 bg-accent/10 rounded-lg border border-accent/30 max-h-48 overflow-y-auto">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{sampleEssay}</p>
+              <Label className="text-xs font-bold uppercase tracking-wider">
+                Bài mẫu ({sampleEssay.split(/\s+/).length} từ)
+              </Label>
+              <div className="p-4 bg-[#F0FDF4] rounded-2xl border-2 border-[#141414]/20 max-h-48 overflow-y-auto text-xs sm:text-sm leading-relaxed font-medium dark:bg-[#232938] dark:border-border">
+                <p className="whitespace-pre-wrap">{sampleEssay}</p>
               </div>
             </div>
           )}
 
           {/* Start Practice Button */}
-          <Button className="w-full gap-2 h-12" onClick={onStartPractice} disabled={!canStart}>
-            <Play className="w-5 h-5" />
-            Bắt đầu luyện tập
+          <Button
+            variant="yellow"
+            className="w-full gap-2 h-12 text-base"
+            onClick={onStartPractice}
+            disabled={!canStart}
+          >
+            <Play className="w-5 h-5 stroke-[2.5]" />
+            Bắt đầu luyện tập ngay
           </Button>
-
-          {/* Mô tả chế độ */}
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground text-center">
-              {writingMode === "self" ? (
-                <>
-                  <strong>Chế độ Tự viết:</strong> Bạn sẽ tự viết bài theo đề bài. 
-                  Sau khi hoàn thành có thể chấm điểm IELTS.
-                </>
-              ) : (
-                <>
-                  <strong>Chế độ Gõ theo mẫu:</strong> Bạn sẽ gõ theo bài mẫu AI. 
-                  Chỉ tính WPM và độ chính xác gõ phím, không chấm điểm.
-                </>
-              )}
-            </p>
-          </div>
         </div>
       </div>
     </div>
