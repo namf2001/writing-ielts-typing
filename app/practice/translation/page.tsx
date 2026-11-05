@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createExercise, getAiHeaders } from "@/lib/storage"
+import { createExercise, getExercises, getAiHeaders, type Exercise } from "@/lib/storage"
 import exercisesData from "@/data/exercises.json"
 
 const TOPIC_ICONS: Record<string, React.ReactNode> = {
@@ -46,29 +46,55 @@ export default function TranslationHubPage() {
   const [selectedTopic, setSelectedTopic] = useState("all")
   const [selectedBand, setSelectedBand] = useState("all")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [customExercises, setCustomExercises] = useState<Exercise[]>([])
 
-  // Filter translation exercises
+  // Load custom translation exercises from storage
+  useEffect(() => {
+    try {
+      const stored = getExercises().filter((e) => e.writingMode === "translation")
+      setCustomExercises(stored)
+    } catch (e) {
+      console.error("Failed to load custom exercises:", e)
+    }
+  }, [])
+
+  // Filter translation exercises (both user-generated and preset)
   const translationExercises = useMemo(() => {
-    return exercisesData.exercises.filter((ex) => {
-      if (ex.writingMode !== "translation") return false
+    const combined = [
+      ...customExercises,
+      ...exercisesData.exercises.filter((ex) => ex.writingMode === "translation"),
+    ]
+    const seen = new Set<string>()
+    const unique = combined.filter((ex) => {
+      if (seen.has(ex.id)) return false
+      seen.add(ex.id)
+      return true
+    })
+
+    return unique.filter((ex) => {
       if (selectedTopic !== "all" && ex.topic !== selectedTopic) return false
       if (selectedBand !== "all" && ex.bandTarget !== parseFloat(selectedBand)) return false
       if (search.trim()) {
         const query = search.toLowerCase()
         return (
           ex.prompt.toLowerCase().includes(query) ||
-          ex.sampleEssay.toLowerCase().includes(query) ||
-          ex.topic.toLowerCase().includes(query)
+          (ex.sampleEssay && ex.sampleEssay.toLowerCase().includes(query)) ||
+          (ex.topic && ex.topic.toLowerCase().includes(query))
         )
       }
       return true
     })
-  }, [selectedTopic, selectedBand, search])
+  }, [customExercises, selectedTopic, selectedBand, search])
 
-  const handleStartExercise = (sample: typeof exercisesData.exercises[0]) => {
+  const handleStartExercise = (sample: typeof exercisesData.exercises[0] | Exercise) => {
+    if (customExercises.some((c) => c.id === sample.id)) {
+      router.push(`/practice/translation/${sample.id}`)
+      return
+    }
+
     const exercise = createExercise({
       prompt: sample.prompt,
-      sampleEssay: sample.sampleEssay,
+      sampleEssay: sample.sampleEssay || "",
       taskType: sample.taskType as any,
       topic: sample.topic,
       bandTarget: sample.bandTarget,
@@ -80,7 +106,7 @@ export default function TranslationHubPage() {
   const handleGenerateAiTranslation = async () => {
     setIsGenerating(true)
     try {
-      // 1. Generate Vietnamese essay via API
+      // 1. Generate Vietnamese essay via API (AI generates both authentic prompt and essay)
       const res = await fetch("/api/generate-vietnamese-essay", {
         method: "POST",
         headers: getAiHeaders(),
@@ -96,9 +122,15 @@ export default function TranslationHubPage() {
         return
       }
 
+      const essayContent = data.vietnameseEssay || data.essay
+      if (!essayContent) {
+        alert("Không nhận được nội dung bài dịch từ AI. Vui lòng thử lại.")
+        return
+      }
+
       const exercise = createExercise({
-        prompt: data.prompt,
-        sampleEssay: data.vietnameseEssay,
+        prompt: data.prompt || "IELTS Academic Writing Task 2",
+        sampleEssay: essayContent,
         taskType: "task2",
         topic: selectedTopic === "all" ? "education" : selectedTopic,
         bandTarget: selectedBand === "all" ? 7.5 : parseFloat(selectedBand),
@@ -218,8 +250,9 @@ export default function TranslationHubPage() {
           </div>
         ) : (
           translationExercises.map((ex) => {
-            const firstSentence = ex.sampleEssay.split(/[.!?]\s+/)[0] || ex.sampleEssay
-            const sentenceCount = ex.sampleEssay.split(/[.!?]\s+/).filter(Boolean).length
+            const essayText = ex.sampleEssay || ""
+            const firstSentence = essayText.split(/[.!?]\s+/)[0] || essayText
+            const sentenceCount = essayText.split(/[.!?]\s+/).filter(Boolean).length
 
             return (
               <Card

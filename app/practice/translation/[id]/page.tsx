@@ -77,10 +77,11 @@ export default function TranslationPracticePage() {
     // Parse Vietnamese essay into sentences
     if (ex.sampleEssay) {
       const vietnameseSentences = ex.sampleEssay
-        .split(/(?<=[.!?])\s+/)
-        .filter((s) => s.trim().length > 0)
+        .split(/(?<=[.!?])\s+|\n+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
         .map((s) => ({
-          vietnamese: s.trim(),
+          vietnamese: s,
           userTranslation: "",
           review: null,
           isReviewed: false,

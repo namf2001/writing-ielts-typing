@@ -206,20 +206,28 @@ function HomeContent() {
   }
 
   const generateVietnameseEssay = async () => {
-    if (!prompt) return
     setIsGeneratingVietnamese(true)
     try {
       const res = await fetch("/api/generate-vietnamese-essay", {
         method: "POST",
         headers: getAiHeaders(),
-        body: JSON.stringify({ prompt, bandTarget }),
+        body: JSON.stringify({
+          prompt: prompt.trim() || undefined,
+          topic: topic === "random" ? null : topic,
+          taskType,
+          bandTarget,
+        }),
       })
       const data = await res.json()
       if (data.error) {
         alert(data.error)
         return
       }
-      setVietnameseEssay(data.vietnameseEssay)
+      if (!prompt && data.prompt) {
+        setPrompt(data.prompt)
+      }
+      const essay = data.vietnameseEssay || data.essay
+      setVietnameseEssay(essay)
     } catch (error) {
       console.error("Failed to generate Vietnamese essay:", error)
       alert("Lỗi kết nối AI. Vui lòng thử lại.")
@@ -841,7 +849,7 @@ function HomeContent() {
                 </div>
               )}
 
-              {writingMode === "translation" && prompt && (
+              {writingMode === "translation" && (
                 <div className="space-y-2 pt-2 border-t-2 border-[#141414]/10 dark:border-border/60">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-bold uppercase tracking-wider text-[#141414] dark:text-white">
@@ -852,11 +860,11 @@ function HomeContent() {
                       variant="green"
                       size="sm"
                       onClick={generateVietnameseEssay}
-                      disabled={isGeneratingVietnamese || !prompt}
+                      disabled={isGeneratingVietnamese}
                       className="text-xs gap-1.5"
                     >
                       <Languages className="w-3.5 h-3.5 stroke-[2.5]" />
-                      {isGeneratingVietnamese ? "Đang tạo bài..." : "Tạo bài tiếng Việt bằng AI"}
+                      {isGeneratingVietnamese ? "Đang tạo bài..." : prompt ? "Tạo bài tiếng Việt bằng AI" : "Tạo bài tiếng Việt & đề thi AI"}
                     </Button>
                   </div>
                   {vietnameseEssay ? (
@@ -865,7 +873,7 @@ function HomeContent() {
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground italic font-medium">
-                      Nhấn nút &ldquo;Tạo bài tiếng Việt bằng AI&rdquo; để chuẩn bị các câu dịch.
+                      Nhấn nút &ldquo;{prompt ? "Tạo bài tiếng Việt bằng AI" : "Tạo bài tiếng Việt & đề thi AI"}&rdquo; để chuẩn bị các câu dịch.
                     </p>
                   )}
                 </div>
